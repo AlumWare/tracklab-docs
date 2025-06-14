@@ -1,0 +1,91 @@
+package domain {
+      package model {
+        package aggregates {
+          class Vehicle <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - String LicensePlate
+            - BigDecimal LoadCapacity
+            - int PaxCapacity
+            - EVehicleStatus Status
+            - Coordinates Location
+            - List<Long> ImageAssetIds
+            + Vehicle(CreateVehicleCommand command)
+            + void UpdateStatus(EVehicleStatus newStatus)
+          }
+
+          class Employee <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - Dni Dni
+            - Email Email
+            - String FirstName
+            - String LastName
+            - String PhoneNumber
+            - Position Position
+            - EEmployeeStatus Status
+            + Employee(CreateEmployeeCommand command)
+            + void ChangePosition(Position newPosition)
+            + void UpdateStatus(EEmployeeStatus newStatus)
+          }
+
+          class Warehouse <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - EWarehouseType Type
+            - Coordinates Coordinates
+            - String Name
+            - StreetAddress Address
+            + Warehouse(CreateWarehouseCommand command)
+            + void UpdateInfo(String name, StreetAddress address, Coordinates coords)
+          }
+
+          class Position <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - String Name
+            + Position(CreatePositionCommand command)
+            + void UpdateName(String newName)
+          }
+        }
+
+        package valueobjects {
+          class Coordinates {
+            - double Latitude
+            - double Longitude
+          }
+
+          class Email {
+            - String Value
+          }
+
+          class StreetAddress {
+            - String Value
+          }
+
+          class Dni {
+            - String Value
+          }
+        }
+
+        package enums {
+          enum EVehicleStatus {
+            Available
+            Occupied
+            Maintenance
+          }
+
+          enum EEmployeeStatus {
+            Available
+            OnVacation
+            Occupied
+          }
+
+          enum EWarehouseType {
+            Client
+            Provider
+            Logistics
+          }
+        }
+      }
+}

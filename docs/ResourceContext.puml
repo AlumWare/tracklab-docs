@@ -1,0 +1,147 @@
+@startuml
+package tracklab-backend as tracklab_backend  {
+    ' Bounded Context
+    package template {
+        package domain {
+              package model {
+                package aggregates {
+                  class Vehicle <<AggregateRoot>> {
+                    - Long Id
+                    - TenantId TenantId
+                    - String LicensePlate
+                    - BigDecimal LoadCapacity
+                    - int PaxCapacity
+                    - EVehicleStatus Status
+                    - Coordinates Location
+                    - List<Long> ImageAssetIds
+                    + Vehicle(CreateVehicleCommand command)
+                    + void UpdateStatus(EVehicleStatus newStatus)
+                  }
+
+                  class Employee <<AggregateRoot>> {
+                    - Long Id
+                    - TenantId TenantId
+                    - Dni Dni
+                    - Email Email
+                    - String FirstName
+                    - String LastName
+                    - String PhoneNumber
+                    - Position Position
+                    - EEmployeeStatus Status
+                    + Employee(CreateEmployeeCommand command)
+                    + void ChangePosition(Position newPosition)
+                    + void UpdateStatus(EEmployeeStatus newStatus)
+                  }
+
+                  class Warehouse <<AggregateRoot>> {
+                    - Long Id
+                    - TenantId TenantId
+                    - EWarehouseType Type
+                    - Coordinates Coordinates
+                    - String Name
+                    - StreetAddress Address
+                    + Warehouse(CreateWarehouseCommand command)
+                    + void UpdateInfo(String name, StreetAddress address, Coordinates coords)
+                  }
+
+                  class Position <<AggregateRoot>> {
+                    - Long Id
+                    - TenantId TenantId
+                    - String Name
+                    + Position(CreatePositionCommand command)
+                    + void UpdateName(String newName)
+                  }
+                }
+
+                package valueobjects {
+                  class Coordinates {
+                    - double Latitude
+                    - double Longitude
+                  }
+
+                  class Email {
+                    - String Value
+                  }
+
+                  class StreetAddress {
+                    - String Value
+                  }
+
+                  class Dni {
+                    - String Value
+                  }
+                  enum EVehicleStatus {
+                    Available
+                    Occupied
+                    Maintenance
+                  }
+
+                  enum EEmployeeStatus {
+                    Available
+                    OnVacation
+                    Occupied
+                  }
+
+                  enum EWarehouseType {
+                    Client
+                    Provider
+                    Logistics
+                  }
+                }
+              }
+        }
+        package infrastructure {
+            package persistence {
+                package jpa {
+                    ' Interfaces que implementan el patrón Repository para la persistencia de datos
+                }
+            }
+        }
+        package application {
+            package internal {
+                package commandservices {
+                    ' Clases que implementan las interfaces de servicios de comandos, ejecutando lógica de negocios relacionada con cambios de estado
+                }
+                package queryservices {
+                    ' Clases que implementan las interfaces de servicios de consultas, para la obtención de datos del sistema
+                }
+            }
+        }
+        package interfaces {
+            package rest {
+                package resources {
+                    ' Clases de tipo record que funcionan como DTOs (Data Transfer Objects), siguiendo los principios REST (se tratan como recursos)
+                }
+                package transform {
+                    ' Clases con métodos estáticos para mapear entre recursos, comandos, consultas o entidades
+                    ' Equivalente al patrón Assembler, puede ser denominado de esta manera
+                }
+                package controllers {
+                    ' Clases que exponen los endpoints REST del sistema, permitiendo la interacción con el cliente
+                }
+            }
+        }
+    }
+    package shared{
+        package domain.model{
+            package aggregates{
+                class Asset <<AggregateRoot>> {
+                  - Long Id
+                  - TenantId TenantId
+                  - String PublicId
+                  - String Url
+                  + Asset(CreateAssetCommand command)
+                }
+            }
+            package valueobjects {
+                class TenantId {
+                  -Long Id
+                }
+
+            }
+        }
+    }
+}
+
+
+@enduml
