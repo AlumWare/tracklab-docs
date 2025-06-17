@@ -51,6 +51,15 @@ package tracklab-backend as tracklab_backend  {
                     + Position(CreatePositionCommand command)
                     + void UpdateName(String newName)
                   }
+                  class Product <<AggregateRoot>> {
+                      - Long Id
+                      - TenantId TenantId
+                      - String Name
+                      - String Description
+                      - Price Price
+                      + Product(CreateProductCommand command)
+                      + void UpdateInfo(String name, String description, Price price)
+                  }
                 }
 
                 package valueobjects {
@@ -136,6 +145,11 @@ package tracklab-backend as tracklab_backend  {
             package valueobjects {
                 class TenantId {
                   -Long Id
+                }
+                class Price <<ValueObject>> {
+                    - BigDecimal Amount
+                    - String Currency
+                    + Price(BigDecimal amount, String currency)
                 }
 
             }
