@@ -20,7 +20,7 @@ package tracklab-backend as tracklab_backend  {
                         - Long ContainerId
                         - Long OrderId
                         - List<shipItem> shipItems  // Productos de la orden que se están transportando
-                        - Node currentNode  // Nodo actual en el que está el container
+                        - WarehouseId warehouseId  // Nodo actual en el que está el container
                         + Container(CreateContainerCommand command)
                         + void UpdateCurrentNode(Node node)
                     }
