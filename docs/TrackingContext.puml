@@ -1,27 +1,63 @@
 @startuml
-'https://plantuml.com/class-diagram
+package tracklab-backend as tracklab_backend  {
+    package tracking {
+        package domain {
+            package model {
+                package aggregates {
+                    class Route <<AggregateRoot>> {
+                        - Long RouteId
+                        - List<RouteItem> Route  // Lista de nodos (almacenes)
+                        - List<OrderId> orders  // Orders que satisface la ruta (puede ser parcialmente)
+                        -
+                        - VehicleId vehicleId
+                        + Route(CreateRouteCommand command)
+                        + void AddNode(Node node)
+                        + void AddOrder(Order order)
+                    }
 
-abstract class AbstractList
-abstract AbstractCollection
-interface List
-interface Collection
 
-List <|-- AbstractList
-Collection <|-- AbstractCollection
+                    class Container {
+                        - Long ContainerId
+                        - Long OrderId
+                        - List<shipItem> shipItems  // Productos de la orden que se están transportando
+                        - Node currentNode  // Nodo actual en el que está el container
+                        + Container(CreateContainerCommand command)
+                        + void UpdateCurrentNode(Node node)
+                    }
 
-Collection <|- List
-AbstractCollection <|- AbstractList
-AbstractList <|-- ArrayList
+                    class TrackingEvent {
+                        - Long EventId
+                        - Long ContainerId
+                        - Long WarehouseId // tal vez como VO
+                        - EventType Type  // Entrada o salida
+                        - Date EventTime  // Hora del evento
+                        + TrackingEvent(Long containerId, Long nodeId, EventType type, Date eventTime)
+                    }
+                }
 
-class ArrayList {
-Object[] elementData
-size()
+                package Entities{
+                    class RouteItem {
+                        - Id
+                        - WarehouseId warehouseId
+                        - DateTime completedAt
+                        - Boolean IsCompleted  // Indica si el nodo fue completado (carga/descarga)
+                        + Node()
+                        + void MarkAsCompleted()
+                    }
+                }
+                package valueobjects {
+                    enum EventType {
+                        Arrival  // Cuando un container llega al nodo
+                        Departure  // Cuando un container sale del nodo
+                        Creation //Momento de creación
+                    }
+                    class shipItem{
+                        Long productId
+                        Long quantity
+                    }
+                }
+            }
+        }
+    }
 }
-
-enum TimeUnit {
-DAYS
-HOURS
-MINUTES
-}
-
 @enduml
