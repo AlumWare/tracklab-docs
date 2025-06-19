@@ -1,0 +1,363 @@
+@startuml
+package tracklab-backend as tracklab_backend {
+    package template {
+        package application {
+            package internal {
+                package commandservices {
+                    class UserCommandService {
+                        - IUserRepository _userRepository
+                        - ITenantRepository _tenantRepository
+                        - IHashingService _hashingService
+                        - ITokenService _tokenService
+                        - ITenantContext _tenantContext
+                    }
+                }
+                package outboundservices {
+                    interface IHashingService {
+                        + string HashPassword(string password)
+                        + bool VerifyPassword(string password, string passwordHash)
+                    }
+                    interface ITokenService {
+                        + string GenerateToken(User user)
+                        + Task<int?> ValidateToken(string token)
+                    }
+                }
+                package queryservices {
+                    class UserQueryService {
+                        - IUserRepository _userRepository
+                        + Task<User?> Handle(GetUserByIdQuery query)
+                        + Task<User?> Handle(GetUserByUsernameQuery query)
+                        + Task<IEnumerable<User>> Handle(GetAllUsersQuery query)
+                    }
+                }
+            }
+        }
+        package domain {
+            package model {
+                package aggregates {
+                    class Tenant <<AggregateRoot>> {
+                        + Long Id
+                        + string Ruc
+                        + string LegalName
+                        + string Code
+                        + string? CommercialName
+                        + string? Address
+                        + string? City
+                        + string? Country
+                        + PhoneNumber? PhoneNumber
+                        + Email? Email
+                        + string? Website
+                        + bool Active
+                    }
+                    class User <<AggregateRoot>> {
+                        + Long Id
+                        + string Username
+                        + string PasswordHash
+                        + Email Email
+                        + string? FirstName
+                        + string? LastName
+                        + bool Active
+                        + TenantId TenantId
+                        - List<Role> _roles
+                        + IReadOnlyCollection Roles
+                        - List<Role> RolesInternal
+                    }
+                }
+                package commands {
+                    class CreateUserCommand {
+                        + string Username
+                        + string Password
+                        + string Email
+                        + string? FirstName
+                        + string? LastName
+                        + IEnumerable<string> Roles
+                    }
+                    class DeleteUserCommand {
+
+                    }
+                    class SignInCommand {
+                        + string Username
+                        + string Password
+                    }
+                    class SignUpCommand {
+                        + string Ruc
+                        + string LegalName
+                        + string? CommercialName
+                        + string? Address
+                        + string? City
+                        + string? Country
+                        + string? TenantPhone
+                        + string? TenantEmail
+                        + string? Website
+                        + string Username
+                        + string Password
+                        + string Email
+                        + string? FirstName
+                        + string? LastName
+                        + string? TenantType
+                    }
+                }
+                package queries {
+                    class GetAllUsersQuery {
+
+                    }
+                    class GetUserByIdQuery {
+
+                    }
+                    class GetUserByUsernameQuery {
+
+                    }
+                }
+                package valueobjects {
+                    class Role <<ValueObject>> {
+                        + Role Admin
+                        + Role Operator
+                        + Role Supervisor
+                        + Role Client
+                        + Role Provider
+                        + string Name
+                        + string Description
+                        + Role()
+                        - Role(string name, string description)
+                    }
+                }
+            }
+            package repositories {
+                interface ITenantRepository {
+                    + Task<Tenant?> FindByRucAsync(string ruc)
+                    + Task<IEnumerable<Tenant>> FindByCountryAsync(string country)
+                }
+                interface IUserRepository {
+                    + Task<User?> FindByUsernameAsync(string username)
+                    + Task<User?> FindByEmailAsync(string email)
+                    + Task<User?> FindByUsernameAndTenantAsync(string username, TenantId tenantId)
+                    + Task<IEnumerable<User>> FindAllAsync()
+                    + Task<IEnumerable<User>> FindByRoleAsync()
+                    + Task<bool> ExistsByUsernameAsync(string username)
+                    + Task<bool> ExistsByEmailAsync(string email)
+                    + Task<User> SaveAsync(User user)
+                    + Task DeleteAsync(User user)
+                    + Task<(IEnumerable<User> Users, int TotalCount)> FindPaginatedAsync(int page, int size, string? searchTerm)
+                }
+            }
+            package services {
+                interface IUserCommandService {
+                    + Task<(Tenant tenant, User user)> Handle(SignUpCommand command)
+                    + Task<(User user, string token)> Handle(SignInCommand command)
+                    + Task<User> Handle(CreateUserCommand command)
+                }
+                interface IUserQueryService {
+                    + Task<User?> Handle(GetUserByIdQuery query)
+                    + Task<User?> Handle(GetUserByUsernameQuery query)
+                    + Task<IEnumerable<User>> Handle(GetAllUsersQuery query)
+                }
+            }
+        }
+        package infraestructure {
+            package configuration {
+                class IamConfigurationExtensions {
+                    + IServiceCollection AddIamConfiguration(this IServiceCollection services, IConfiguration configuration)
+                    + IApplicationBuilder UseIamConfiguration(this IApplicationBuilder app)
+                }
+                class IamServiceCollectionExtensions {
+                    + IServiceCollection AddIamServices(this IServiceCollection services)
+                }
+            }
+            package hashing {
+                package bcrypt {
+                    package services {
+                        class HashingService {
+                            + string HashPassword(string password)
+                            + bool VerifyPassword(string password, string passwordHash)
+                        }
+                    }
+                }
+            }
+            package persistence {
+                package efc {
+                    package repositories {
+                        class TenantRepository {
+                            + TenantRepository(AppDbContext context)
+                            + Task<Tenant?> FindByRucAsync(string ruc)
+                            + Task<IEnumerable<Tenant>> FindByCountryASync(string country)
+                        }
+                        class UserRepository {
+                            + ITenantContext _tenantContext
+                            + UserRepository(AppDbContext context, ITenantContext tenantContext)
+                            - IQueryable<User> GetTenantFilteredQuery()
+                            + Task<User?> FindByUsernameAsync(string username)
+                            + Task<User?> FindByEmailAsync(string email)
+                            + Task<User?> FindByUsernameAndTenantAsync(string username, TenantId tenantId)
+                            + Task<IEnumerable<User>> FindAllAsync()
+                            + Task<IEnumerable<User>> FindByRoleAsync(string roleName)
+                            + Task<bool> ExistsByUsernameAsync(string username)
+                            + Task<bool> ExistsByEmailAsync(string email)
+                            + Task<User> SaveAsync(User user)
+                            + Task DeleteAsync(User user)
+                            + Task<(IEnumerable<User> Users, int TotalCount)> FindPaginatedAsync(int page, int size, string? searchTerm)
+                            + Task<User?> FindByIdAsync(long id)
+                            + Task<IEnumerable<User>> ListAsync()
+                        }
+                    }
+                }
+            }
+            package pipeline {
+                package middleware {
+                    package attributes {
+                        class AllowAnonymousAttribute {
+
+                        }
+                        class AuthorizeAttribute {
+                            + void OnAuthorization(AuthorizationFilterContext context)
+                        }
+                    }
+                    package components {
+                        class RequestAuthorizationMiddleware {
+                            - RequestDelegate _next
+                            + RequestAuthorizationMiddleware(RequestDelegate next)
+                            + Task InvokeAsync(HttpContext context, ITokenService tokenService, ITenantContext tenantContext, IUserRepository userRepository)
+                        }
+                        class TenantResolutionMiddleware {
+                            - RequestDelegate _next
+                            - ILogger<TenantResolutionMiddleware> _logger
+                            + TenantResolutionMiddleware(RequestDelegate next, ILogger<TenantResolutionMiddleware> logger)
+                            + Task InvokeAsync(HttpContext context, ITenantContext tenantContext)
+                            - long? ExtractTenantFromJWT(HttpContext context)
+                            - long? ExtractTenantFromAlternativeSources(HttpContext context)
+                        }
+                    }
+                    package extensions {
+                        class RequestAuthorizationMiddlewareExtensions {
+                            + IApplicationBuilder UseRequestAuthorization(this IApplicationBuilder builder)
+                        }
+                        class TenantMiddlewareExtensions {
+                            + IApplicationBuilder UserTenantResolution(this IApplicationBuilder builder)
+                            + IServiceCollection AddTenantContext(this IServiceCollection services)
+                        }
+                    }
+                }
+            }
+            package tokens {
+                package jwt {
+                    package configuration {
+                        class JwtConfiguration {
+                            + string SectionName
+                            + string SecretKey
+                            + string Issuer
+                            + string Audience
+                            + int ExpirationMinutes
+                            + int RefreshTokenExpirationDays
+                        }
+                        class TokenSettings {
+                            + string SectionName
+                            + string Secret
+                            + string Issuer
+                            + string Audience
+                            + int ExpirationInMinutes
+                        }
+                    }
+                    package services {
+                        class TokenService {
+                            - TokenSetting _tokenSettings
+                            - ILogger<TokenService> _logger
+                            + string GenerateToken(User user)
+                            + string GenerateToken(User user, IEnumerable<Claim> additionalClaims)
+                            + Task<int?> ValidateToken(string token)
+                            + long? ExtractTenantId(string token)
+                            + bool IsTokenExpired(string token)
+                            + string GenerateRefreshToken()
+                        }
+                    }
+                }
+            }
+        }
+        package interfaces {
+            package rest {
+                package resources {
+                    class AuthenticatedUserResource {
+                        + long Id
+                        + string Username
+                        + string Token
+                    }
+                    class CreateUserResource {
+                        + string Username
+                        + string Password
+                        + string Email
+                        + string? FirstName
+                        + string? LastName
+                        + IEnumerable<string> Roles
+                    }
+                    class SignInResource {
+                        + string Username
+                        + string Password
+                    }
+                    class SignUpResource {
+                        + string Ruc
+                        + string LegalName
+                        + string? CommercialName
+                        + string? Address
+                        + string? City
+                        + string? Country
+                        + string? TenantPhone
+                        + string? TenantEmail
+                        + string? Website
+                        + string Username
+                        + string Password
+                        + string Email
+                        + string? FirstName
+                        + string? LastName
+                        + string? TenantType
+                    }
+                    class UserResouce {
+                        + long Id
+                        + string Username
+                        + string Email
+                        + string? FirstName
+                        + string? LastName
+                        + string FullName
+                        + bool Active
+                        + long TenantId
+                        + IEnumerable<string> Roles
+                    }
+                }
+                package transform {
+                    class AuthenticatedUserResourceFromEntityAssembler {
+                        + AuthenticatedUserResource ToResourceFromEntity(User user, string token)
+                    }
+                    class CreateUserCommandFromResourceAssembler {
+                        + CreateUserCommand ToCommandFromResource(CreateUserResource resource)
+                    }
+                    class SignInCommandFromResourceAssembler {
+                        + SignInCommand ToCommandFromResource(SignInResource resource)
+                    }
+                    class SignUpCommandFromResourceAssembler {
+                        + SignUpCommand ToCommandFromResource(SignUpResource resource)
+                    }
+                    class UserResourceFromEntityAssembler {
+                        + UserResource ToResourceFromEntity(User entity)
+                        + IEnumerable<UserResource> ToResourceFromEntity(IEnumerable<User> entities)
+                    }
+                }
+                class AuthenticationController {
+                    - IUserCommandService _userCommandService
+                    - IUserQueryService _userQueryService
+                    + AuthenticationController(IUserCommandService userCommandService, IUserQueryService userQueryService)
+                    + Task<IActionResult> SignUp([FromBody] SignUpResource resource)
+                    + Task<IActionResult> SignIn([FromBody] SignInResource resource)
+                    + Task<IActionResult> CreateUser([FromBody] CreateUserResource resource)
+                    + Task<IActionResult> GetUserById(long id)
+                    + Task<IActionResult> GetAllUsers()
+                    + IActionResult GetProfile()
+                }
+                class HealthController {
+                    + IActionResult PublicHealth()
+                    + IActionResult ProtectedHealth()
+                    + IActionResult AdminHealth()
+                }
+                class UserController {
+
+                }
+            }
+        }
+    }
+}
