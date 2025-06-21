@@ -216,6 +216,13 @@ package tracklab-backend as tracklab_backend  {
           class Dni {
             - String Value
           }
+          class Price {
+            - decimal Amount
+            - String Currency
+          }
+          class TenantId {
+            - long Value
+          }
           enum EVehicleStatus {
             Available
             Occupied
@@ -651,5 +658,132 @@ package tracklab-backend as tracklab_backend  {
   }
 }
 
+' ======== RELACIONES ========
+
+' Relaciones de composición entre Agregados y Value Objects
+Vehicle ||--o{ Coordinates : contains
+Vehicle ||--o{ TenantId : contains
+Vehicle ||--o{ EVehicleStatus : contains
+
+Employee ||--o{ TenantId : contains
+Employee ||--o{ Dni : contains
+Employee ||--o{ Email : contains
+Employee ||--o{ Position : references
+Employee ||--o{ EEmployeeStatus : contains
+
+Warehouse ||--o{ TenantId : contains
+Warehouse ||--o{ Coordinates : contains
+Warehouse ||--o{ StreetAddress : contains
+Warehouse ||--o{ EWarehouseType : contains
+
+Position ||--o{ TenantId : contains
+
+Product ||--o{ TenantId : contains
+Product ||--o{ Price : contains
+
+' Relaciones de dependencia de Commands hacia Value Objects
+CreateVehicleCommand ..> Coordinates : uses
+CreateVehicleCommand ..> EVehicleStatus : uses
+CreateWarehouseCommand ..> EWarehouseType : uses
+CreateWarehouseCommand ..> Coordinates : uses
+UpdateVehicleStatusCommand ..> EVehicleStatus : uses
+UpdateEmployeeStatusCommand ..> EEmployeeStatus : uses
+
+' Relaciones de implementación de servicios
+EmployeeCommandService ..|> IEmployeeCommandService : implements
+EmployeeQueryService ..|> IEmployeeQueryService : implements
+PositionCommandService ..|> IPositionCommandService : implements
+PositionQueryService ..|> IPositionQueryService : implements
+ProductCommandService ..|> IProductCommandService : implements
+ProductQueryService ..|> IProductQueryService : implements
+VehicleCommandService ..|> IVehicleCommandService : implements
+VehicleQueryService ..|> IVehicleQueryService : implements
+WarehouseCommandService ..|> IWarehouseCommandService : implements
+WarehouseQueryService ..|> IWarehouseQueryService : implements
+
+' Relaciones de implementación de repositorios
+EmployeeRepository ..|> IEmployeeRepository : implements
+PositionRepository ..|> IPositionRepository : implements
+ProductRepository ..|> IProductRepository : implements
+VehicleRepository ..|> IVehicleRepository : implements
+WarehouseRepository ..|> IWarehouseRepository : implements
+
+' Relaciones de uso entre Command Services y Repositories
+EmployeeCommandService --> IEmployeeRepository : uses
+EmployeeQueryService --> IEmployeeRepository : uses
+PositionCommandService --> IPositionRepository : uses
+PositionQueryService --> IPositionRepository : uses
+ProductCommandService --> IProductRepository : uses
+ProductQueryService --> IProductRepository : uses
+VehicleCommandService --> IVehicleRepository : uses
+VehicleQueryService --> IVehicleRepository : uses
+WarehouseCommandService --> IWarehouseRepository : uses
+WarehouseQueryService --> IWarehouseRepository : uses
+
+' Relaciones de uso entre Controllers y Services
+EmployeeController --> IEmployeeCommandService : uses
+EmployeeController --> IEmployeeQueryService : uses
+PositionController --> IPositionCommandService : uses
+PositionController --> IPositionQueryService : uses
+ProductController --> IProductCommandService : uses
+ProductController --> IProductQueryService : uses
+VehicleController --> IVehicleCommandService : uses
+VehicleController --> IVehicleQueryService : uses
+WarehouseController --> IWarehouseCommandService : uses
+WarehouseController --> IWarehouseQueryService : uses
+
+' Relaciones de transformación entre Assemblers y Commands/Resources/Entities
+CreateEmployeeCommandFromResourceAssembler ..> CreateEmployeeResource : transforms
+CreateEmployeeCommandFromResourceAssembler ..> CreateEmployeeCommand : creates
+CreatePositionCommandFromResourceAssembler ..> CreatePositionResource : transforms
+CreatePositionCommandFromResourceAssembler ..> CreatePositionCommand : creates
+CreateProductCommandFromResourceAssembler ..> CreateProductResource : transforms
+CreateProductCommandFromResourceAssembler ..> CreateProductCommand : creates
+CreateVehicleCommandFromResourceAssembler ..> CreateVehicleResource : transforms
+CreateVehicleCommandFromResourceAssembler ..> CreateVehicleCommand : creates
+CreateWarehouseCommandFromResourceAssembler ..> CreateWarehouseResource : transforms
+CreateWarehouseCommandFromResourceAssembler ..> CreateWarehouseCommand : creates
+
+EmployeeResourceFromEntityAssembler ..> Employee : transforms
+EmployeeResourceFromEntityAssembler ..> EmployeeResource : creates
+PositionResourceFromEntityAssembler ..> Position : transforms
+PositionResourceFromEntityAssembler ..> PositionResource : creates
+ProductResourceFromEntityAssembler ..> Product : transforms
+ProductResourceFromEntityAssembler ..> ProductResource : creates
+VehicleResourceFromEntityAssembler ..> Vehicle : transforms
+VehicleResourceFromEntityAssembler ..> VehicleResource : creates
+WarehouseResourceFromEntityAssembler ..> Warehouse : transforms
+WarehouseResourceFromEntityAssembler ..> WarehouseResource : creates
+
+UpdateEmployeeInfoCommandFromResourceAssembler ..> UpdateEmployeeResource : transforms
+UpdateEmployeeInfoCommandFromResourceAssembler ..> ChangeEmployeePositionCommand : creates
+UpdateEmployeeInfoCommandFromResourceAssembler ..> UpdateEmployeeStatusCommand : creates
+UpdatePositionNameCommandFromResourceAssembler ..> UpdatePositionResource : transforms
+UpdatePositionNameCommandFromResourceAssembler ..> UpdatePositionNameCommand : creates
+UpdateProductInfoCommandFromResourceAssembler ..> UpdateProductResource : transforms
+UpdateProductInfoCommandFromResourceAssembler ..> UpdateProductInfoCommand : creates
+UpdateVehicleInfoCommandFromResourceAssembler ..> UpdateVehicleResource : transforms
+UpdateVehicleInfoCommandFromResourceAssembler ..> UpdateVehicleInfoCommand : creates
+UpdateWarehouseInfoCommandFromResourceAssembler ..> UpdateWarehouseResource : transforms
+UpdateWarehouseInfoCommandFromResourceAssembler ..> UpdateWarehouseInfoCommand : creates
+
+' Relaciones entre Commands/Queries y Aggregates
+CreateEmployeeCommand ..> Employee : creates
+CreatePositionCommand ..> Position : creates
+CreateProductCommand ..> Product : creates
+CreateVehicleCommand ..> Vehicle : creates
+CreateWarehouseCommand ..> Warehouse : creates
+
+GetEmployeeByIdQuery ..> Employee : queries
+GetPositionByIdQuery ..> Position : queries
+GetProductByIdQuery ..> Product : queries
+GetVehicleByIdQuery ..> Vehicle : queries
+GetWarehouseByIdQuery ..> Warehouse : queries
+
+GetAllEmployeesQuery ..> Employee : queries
+GetAllPositionsQuery ..> Position : queries
+GetAllProductsQuery ..> Product : queries
+GetAllVehiclesQuery ..> Vehicle : queries
+GetAllWarehousesQuery ..> Warehouse : queries
 
 @enduml
