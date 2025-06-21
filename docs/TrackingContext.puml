@@ -336,4 +336,103 @@ package tracklab-backend as tracklab_backend  {
         }
     }
 }
+
+' ======== RELACIONES ========
+
+' Relaciones de composición entre Agregados y Value Objects
+Container ||--o{ OrderId : contains
+Container ||--o{ WarehouseId : contains
+Container ||--o{ ShipItem : contains
+
+Route ||--o{ VehicleId : contains
+Route ||--o{ RouteItem : contains
+Route ||--o{ OrderId : contains
+
+TrackingEvent ||--o{ ContainerId : contains
+TrackingEvent ||--o{ WarehouseId : contains
+TrackingEvent ||--o{ EventType : contains
+
+RouteItem ||--o{ WarehouseId : contains
+
+' Relaciones de dependencia de Commands hacia Value Objects
+CreateContainerCommand ..> OrderId : uses
+CreateContainerCommand ..> WarehouseId : uses
+CreateContainerCommand ..> ShipItem : uses
+CreateRouteCommand ..> VehicleId : uses
+CreateTrackingEventCommand ..> ContainerId : uses
+CreateTrackingEventCommand ..> WarehouseId : uses
+CreateTrackingEventCommand ..> EventType : uses
+AddNodeCommand ..> WarehouseId : uses
+AddOrderToRouteCommand ..> OrderId : uses
+UpdateContainerNodeCommand ..> WarehouseId : uses
+
+' Relaciones de implementación de servicios
+ContainerCommandService ..|> IContainerCommandService : implements
+ContainerQueryService ..|> IContainerQueryService : implements
+RouteCommandService ..|> IRouteCommandService : implements
+RouteQueryService ..|> IRouteQueryService : implements
+TrackingEventCommandService ..|> ITrackingEventCommandService : implements
+TrackingEventQueryService ..|> ITrackingEventQueryService : implements
+
+' Relaciones de implementación de repositorios
+ContainerRepository ..|> IContainerRepository : implements
+RouteRepository ..|> IRouteRepository : implements
+TrackingEventRepository ..|> ITrackingEventRepository : implements
+
+' Relaciones de uso entre Command Services y Repositories
+ContainerCommandService --> IContainerRepository : uses
+ContainerQueryService --> IContainerRepository : uses
+RouteCommandService --> IRouteRepository : uses
+RouteQueryService --> IRouteRepository : uses
+TrackingEventCommandService --> ITrackingEventRepository : uses
+TrackingEventQueryService --> ITrackingEventRepository : uses
+
+' Relaciones de uso entre Repositories y Context
+ContainerRepository --> ITenantContext : uses
+RouteRepository --> ITenantContext : uses
+TrackingEventRepository --> ITenantContext : uses
+
+' Relaciones de uso entre Controllers y Services
+ContainerController --> IContainerCommandService : uses
+ContainerController --> IContainerQueryService : uses
+RouteController --> IRouteCommandService : uses
+RouteController --> IRouteQueryService : uses
+TrackingEventController --> ITrackingEventCommandService : uses
+TrackingEventController --> ITrackingEventQueryService : uses
+
+' Relaciones de transformación entre Assemblers y Commands/Resources/Entities
+ContainerResourceFromEntityAssembler ..> Container : transforms
+ContainerResourceFromEntityAssembler ..> ContainerResource : creates
+ContainerResourceFromEntityAssembler ..> ShipItem : transforms
+ContainerResourceFromEntityAssembler ..> ShipItemResource : creates
+RouteResourceFromEntityAssembler ..> Route : transforms
+RouteResourceFromEntityAssembler ..> RouteResources : creates
+RouteResourceFromEntityAssembler ..> RouteItem : transforms
+RouteResourceFromEntityAssembler ..> RouteItemResource : creates
+TrackingEventResourceFromEntityAssembler ..> TrackingEvent : transforms
+TrackingEventResourceFromEntityAssembler ..> TrackingEventResource : creates
+
+' Relaciones entre Commands/Queries y Aggregates
+CreateContainerCommand ..> Container : creates
+CreateRouteCommand ..> Route : creates
+CreateTrackingEventCommand ..> TrackingEvent : creates
+AddNodeCommand ..> RouteItem : creates
+AddOrderToRouteCommand ..> Route : updates
+UpdateContainerNodeCommand ..> Container : updates
+
+GetContainerByIdQuery ..> Container : queries
+GetAllContainersQuery ..> Container : queries
+GetRouteByIdQuery ..> Route : queries
+GetAllRoutesByIdQuery ..> Route : queries
+GetTrackingEventByIdQuery ..> TrackingEvent : queries
+GetAllTrackingEventsQuery ..> TrackingEvent : queries
+
+' Relaciones de composición entre Agregados y Entidades
+Route ||--o{ RouteItem : contains
+
+' Relaciones de dependencia entre Value Objects
+OrderId ..> long : uses
+VehicleId ..> long : uses
+WarehouseId ..> long : uses
+
 @enduml

@@ -155,4 +155,66 @@ package tracklab-backend as tracklab_backend {
   }
 }
 
+' ======== RELACIONES ========
+
+' Relaciones de implementación de repositorios
+BaseRepository ..|> IBaseRepository : implements
+UnitOfWork ..|> IUnitOfWork : implements
+
+' Relaciones de implementación de contextos
+TenantContext ..|> ITenantContext : implements
+
+' Relaciones de uso entre Repositories y Context
+BaseRepository --> AppDbContext : uses
+UnitOfWork --> AppDbContext : uses
+
+' Relaciones de configuración de Swagger
+SwaggerConfig ..> IServiceCollection : configures
+AuthorizeOperationFilter ..> OpenApiOperation : uses
+AuthorizeOperationFilter ..> OperationFilterContext : uses
+
+' Relaciones de extensiones de configuración
+TenantContextExtensions ..> IServiceCollection : registers
+TenantContextExtensions ..> ITenantContext : registers
+
+' Relaciones de extensiones de ModelBuilder
+ModelBuilderExtensions ..> ModelBuilder : extends
+StringExtensions ..> string : extends
+
+' Relaciones de extensiones de ASP.NET
+ModelStateExtensions ..> ModelStateDictionary : extends
+KebabCaseRouteNamingConvention ..> ControllerModel : applies
+StringExtensions ..> string : extends
+
+' Relaciones de AppDbContext con entidades
+AppDbContext ||--o{ Vehicle : contains
+AppDbContext ||--o{ Employee : contains
+AppDbContext ||--o{ Warehouse : contains
+AppDbContext ||--o{ Position : contains
+AppDbContext ||--o{ Product : contains
+AppDbContext ||--o{ Order : contains
+AppDbContext ||--o{ OrderItem : contains
+AppDbContext ||--o{ User : contains
+AppDbContext ||--o{ Tenant : contains
+AppDbContext ||--o{ RouteAggregate : contains
+AppDbContext ||--o{ Container : contains
+AppDbContext ||--o{ TrackingEvent : contains
+
+' Relaciones de dependencia entre Value Objects
+Email ..> Regex : uses
+PhoneNumber ..> Regex : uses
+Price ..> decimal : uses
+Price ..> string : uses
+TenantId ..> long : uses
+
+' Relaciones de uso entre BaseRepository y AppDbContext
+BaseRepository --> AppDbContext : uses
+
+' Relaciones de configuración de Entity Framework
+AppDbContext ..> DbContextOptions : uses
+AppDbContext ..> ModelBuilder : configures
+
+' Relaciones de extensiones de string
+StringExtensions ..> Regex : uses
+
 @enduml

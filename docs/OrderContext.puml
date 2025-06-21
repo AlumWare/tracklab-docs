@@ -227,5 +227,68 @@ package tracklab-backend as tracklab_backend  {
     }
 }
 
+' ======== RELACIONES ========
+
+' Relaciones de composición entre Agregados y Value Objects
+Order ||--o{ TenantId : contains
+Order ||--o{ OrderStatus : contains
+Order ||--o{ OrderItem : contains
+
+OrderItem ||--o{ ProductId : contains
+OrderItem ||--o{ Price : contains
+
+Asset ||--o{ TenantId : contains
+
+' Relaciones de dependencia de Commands hacia Value Objects
+CreateOrderCommand ..> TenantId : uses
+AddOrderItemCommand ..> ProductId : uses
+AddOrderItemCommand ..> Price : uses
+UpdateOrderStatusCommand ..> OrderStatus : uses
+
+' Relaciones de implementación de servicios
+OrderCommandService ..|> IOrderCommandService : implements
+OrderQueryService ..|> IOrderQueryService : implements
+
+' Relaciones de implementación de repositorios
+OrderRepository ..|> IOrderRepository : implements
+
+' Relaciones de uso entre Command Services y Repositories
+OrderCommandService --> IOrderRepository : uses
+OrderQueryService --> IOrderRepository : uses
+
+' Relaciones de uso entre Repositories y Context
+OrderRepository --> ITenantContext : uses
+
+' Relaciones de uso entre Controllers y Services
+OrderController --> IOrderCommandService : uses
+OrderController --> IOrderQueryService : uses
+
+' Relaciones de transformación entre Assemblers y Commands/Resources/Entities
+AddOrderItemCommandFromResourceAssembler ..> AddOrderItemResource : transforms
+AddOrderItemCommandFromResourceAssembler ..> AddOrderItemCommand : creates
+CreateOrderCommandFromResourceAssembler ..> CreateOrderResource : transforms
+CreateOrderCommandFromResourceAssembler ..> CreateOrderCommand : creates
+OrderResourceFromEntityAssembler ..> Order : transforms
+OrderResourceFromEntityAssembler ..> OrderResource : creates
+OrderResourceFromEntityAssembler ..> OrderItem : transforms
+OrderResourceFromEntityAssembler ..> OrderItemResource : creates
+UpdateOrderStatusCommandFromResourceAssemble ..> UpdateOrderStatusResource : transforms
+UpdateOrderStatusCommandFromResourceAssemble ..> UpdateOrderStatusCommand : creates
+
+' Relaciones entre Commands/Queries y Aggregates
+CreateOrderCommand ..> Order : creates
+AddOrderItemCommand ..> OrderItem : creates
+UpdateOrderStatusCommand ..> Order : updates
+DeleteOrderCommand ..> Order : deletes
+
+GetOrderByIdQuery ..> Order : queries
+GetAllOrdersQuery ..> Order : queries
+
+' Relaciones de composición entre Order y OrderItem
+Order ||--o{ OrderItem : contains
+
+' Relaciones de dependencia entre Value Objects
+Price ..> BigDecimal : uses
+Price ..> String : uses
 
 @enduml
