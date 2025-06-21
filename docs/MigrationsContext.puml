@@ -1,6 +1,6 @@
 @startuml
 package tracklab-backend as tracklab_backend {
-    package template {
+    package migrations {
         namespace Alumware.Tracklab.API.Migrations {
             class InitialMigration {
                 + void Up(MigrationBuilder migrationBuilder)
@@ -16,3 +16,4 @@ package tracklab-backend as tracklab_backend {
         }
     }
 }
+@enduml

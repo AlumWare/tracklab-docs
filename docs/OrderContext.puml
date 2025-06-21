@@ -1,7 +1,7 @@
 @startuml
 package tracklab-backend as tracklab_backend  {
     ' Bounded Context
-    package template {
+    package order {
         package domain {
             package model {
                 package aggregates {
