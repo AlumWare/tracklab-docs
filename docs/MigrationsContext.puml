@@ -16,4 +16,20 @@ package tracklab-backend as tracklab_backend {
         }
     }
 }
+
+' ======== RELACIONES ========
+
+' Relaciones de uso entre Migrations y Entity Framework
+InitialMigration ..> MigrationBuilder : uses
+AddTrackingContext ..> MigrationBuilder : uses
+AppDbContextModelSnapshot ..> ModelBuilder : uses
+
+' Relaciones de dependencia entre migraciones
+InitialMigration ..> AppDbContextModelSnapshot : references
+AddTrackingContext ..> AppDbContextModelSnapshot : references
+
+' Relaciones de configuración de Entity Framework
+MigrationBuilder ..> ModelBuilder : configures
+ModelBuilder ..> AppDbContext : configures
+
 @enduml

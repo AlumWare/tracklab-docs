@@ -361,4 +361,93 @@ package tracklab-backend as tracklab_backend {
         }
     }
 }
+
+' ======== RELACIONES ========
+
+' Relaciones de composición entre Agregados y Value Objects
+User ||--o{ TenantId : contains
+User ||--o{ Email : contains
+User ||--o{ Role : contains
+
+Tenant ||--o{ PhoneNumber : contains
+Tenant ||--o{ Email : contains
+
+' Relaciones de dependencia de Commands hacia Value Objects
+CreateUserCommand ..> Email : uses
+CreateUserCommand ..> Role : uses
+SignUpCommand ..> Email : uses
+SignUpCommand ..> PhoneNumber : uses
+
+' Relaciones de implementación de servicios
+UserCommandService ..|> IUserCommandService : implements
+UserQueryService ..|> IUserQueryService : implements
+HashingService ..|> IHashingService : implements
+TokenService ..|> ITokenService : implements
+
+' Relaciones de implementación de repositorios
+UserRepository ..|> IUserRepository : implements
+TenantRepository ..|> ITenantRepository : implements
+
+' Relaciones de uso entre Command Services y Repositories/Services
+UserCommandService --> IUserRepository : uses
+UserCommandService --> ITenantRepository : uses
+UserCommandService --> IHashingService : uses
+UserCommandService --> ITokenService : uses
+UserCommandService --> ITenantContext : uses
+
+UserQueryService --> IUserRepository : uses
+
+' Relaciones de uso entre Repositories y Context
+UserRepository --> ITenantContext : uses
+
+' Relaciones de uso entre Middleware y Services
+RequestAuthorizationMiddleware --> ITokenService : uses
+RequestAuthorizationMiddleware --> ITenantContext : uses
+RequestAuthorizationMiddleware --> IUserRepository : uses
+TenantResolutionMiddleware --> ITenantContext : uses
+
+' Relaciones de uso entre Controllers y Services
+AuthenticationController --> IUserCommandService : uses
+AuthenticationController --> IUserQueryService : uses
+
+' Relaciones de transformación entre Assemblers y Commands/Resources/Entities
+AuthenticatedUserResourceFromEntityAssembler ..> User : transforms
+AuthenticatedUserResourceFromEntityAssembler ..> AuthenticatedUserResource : creates
+CreateUserCommandFromResourceAssembler ..> CreateUserResource : transforms
+CreateUserCommandFromResourceAssembler ..> CreateUserCommand : creates
+SignInCommandFromResourceAssembler ..> SignInResource : transforms
+SignInCommandFromResourceAssembler ..> SignInCommand : creates
+SignUpCommandFromResourceAssembler ..> SignUpResource : transforms
+SignUpCommandFromResourceAssembler ..> SignUpCommand : creates
+UserResourceFromEntityAssembler ..> User : transforms
+UserResourceFromEntityAssembler ..> UserResouce : creates
+
+' Relaciones entre Commands/Queries y Aggregates
+CreateUserCommand ..> User : creates
+SignUpCommand ..> Tenant : creates
+SignUpCommand ..> User : creates
+DeleteUserCommand ..> User : deletes
+
+GetUserByIdQuery ..> User : queries
+GetUserByUsernameQuery ..> User : queries
+GetAllUsersQuery ..> User : queries
+
+' Relaciones de configuración
+IamConfigurationExtensions ..> JwtConfiguration : configures
+IamConfigurationExtensions ..> TokenSettings : configures
+IamServiceCollectionExtensions ..> IUserCommandService : registers
+IamServiceCollectionExtensions ..> IUserQueryService : registers
+IamServiceCollectionExtensions ..> IHashingService : registers
+IamServiceCollectionExtensions ..> ITokenService : registers
+IamServiceCollectionExtensions ..> IUserRepository : registers
+IamServiceCollectionExtensions ..> ITenantRepository : registers
+
+' Relaciones de middleware
+RequestAuthorizationMiddlewareExtensions ..> RequestAuthorizationMiddleware : configures
+TenantMiddlewareExtensions ..> TenantResolutionMiddleware : configures
+TenantMiddlewareExtensions ..> ITenantContext : registers
+
+' Relaciones de atributos
+AuthorizeAttribute ..> AuthorizationFilterContext : uses
+
 @enduml
