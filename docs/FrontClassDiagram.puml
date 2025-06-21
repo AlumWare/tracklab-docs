@@ -1,0 +1,570 @@
+@startuml TrackLab_Frontend_Architecture
+
+' ======================
+' CONFIGURACIÓN GLOBAL
+' ======================
+skinparam classFontSize 14
+skinparam classFontName Arial
+skinparam classAttributeFontSize 12
+skinparam classAttributeFontName Arial
+skinparam packageStyle rectangle
+
+' ======================
+' CONTEXTO: ORDERS (ÓRDENES)
+' ======================
+package "features.orders" {
+
+  ' ---- MODELOS DE DOMINIO ----
+  package "Domain Models" {
+    class Order <<Entity>> {
+      +id: number
+      +status: 'pending'|'inprocess'|'delivered'
+      +date: string
+      +materials: Material[]
+      +destination: string
+      +totalItems: number
+      +deliveredItems: number
+      +progress: number
+      +canBeCanceled(): boolean
+    }
+    class Operation <<Entity>> {
+      +id: number
+      +type: string
+      +date: Date
+      +node: any
+      +container: any
+      +order: Order
+      +photos: string[]
+      +formatDate(date): string
+      +capitalizeType(type): string
+    }
+    class Material <<Model>> {
+      +name: string
+      +quantity: number
+      +unit: string
+      +delivered: number
+    }
+  }
+
+  ' ---- STORES (GESTIÓN DE ESTADO) ----
+  class OrderStore <<Store>> {
+    +orders: Order[]
+    +selectedOrder: Order | null
+    +getOrders(): Order[]
+    +getPendingOrders(): Order[]
+    +getInProcessOrders(): Order[]
+    +getDeliveredOrders(): Order[]
+    +setSelectedOrder(order): void
+    +addOrder(order): void
+    +updateOrder(orderId, data): void
+    +deleteOrder(orderId): void
+    +filterOrders(searchText, status): Order[]
+  }
+
+  class WarehouseStore <<Store>> {
+    +warehouses: Warehouse[]
+    +zones: Zone[]
+    +fetchWarehouses(): Promise<Warehouse[]>
+    +fetchZones(): Promise<Zone[]>
+    +createWarehouse(warehouse): Promise<Warehouse>
+    +updateWarehouse(warehouse): Promise<Warehouse>
+    +deleteWarehouse(id): Promise<boolean>
+  }
+
+  ' ---- VISTAS PRINCIPALES ----
+  class ClientOrderCreationView <<View>> {
+    +createOrder(): void
+    +validateForm(): boolean
+  }
+  class ClientOrderListView <<View>> {
+    +displayOrders(): void
+    +filterOrders(): void
+  }
+  class OrderDetailsView <<View>> {
+    +showOrderDetails(): void
+    +updateOrderStatus(): void
+  }
+  class OperationExecutionView <<View>> {
+    +executeOperation(): void
+    +recordProgress(): void
+  }
+
+  ' ---- COMPONENTES ----
+  class AddNodeModal <<Component>> {
+    +show: boolean
+    +nodeData: any
+    +onSave(): void
+    +onCancel(): void
+  }
+  class WarehouseModal <<Component>> {
+    +show: boolean
+    +warehouseData: any
+    +onSave(): void
+    +onCancel(): void
+  }
+
+  ' ---- RELACIONES ----
+  Order --> Material : contiene
+  Operation --> Order : procesa
+  OrderStore --> Order : gestiona
+  ClientOrderCreationView ..> OrderStore : usa
+  ClientOrderListView ..> OrderStore : usa
+  OrderDetailsView ..> OrderStore : usa
+  OperationExecutionView ..> OrderStore : usa
+}
+
+' ======================
+' CONTEXTO: SECURITY (SEGURIDAD)
+' ======================
+package "features.security" {
+
+  package "Domain Models" {
+    class User <<Entity>> {
+      +id: number
+      +tenantId: number
+      +email: string
+      +password: string
+      +role: 'admin'|'supervisor'|'operator'
+      +status: 'active'|'inactive'|'suspended'
+      +createdAt: Date
+      +updatedAt: Date
+      +isActive: boolean
+      +changeRole(role): void
+      +deactivate(): void
+    }
+    class UserSession <<Entity>> {
+      +jwt: string
+      +userId: string
+      +userName: string
+      +email: string
+      +role: string
+      +createdAt: number
+      +expiresAt: number
+      +tenantId: string
+      +permissions: string[]
+    }
+  }
+
+  ' ---- VISTAS ----
+  class RegisterCompanyView <<View>> {
+    +registrationData: any
+    +registerCompany(): void
+    +validateData(): boolean
+  }
+
+  ' ---- SERVICIOS ----
+  class SecurityService <<Service>> {
+    +login(email, password): Promise<User>
+    +logout(): void
+    +register(userData): Promise<User>
+    +validateToken(): boolean
+    +refreshToken(): Promise<string>
+  }
+
+  SecurityService --> User : gestiona
+  SecurityService --> UserSession : gestiona
+  RegisterCompanyView ..> SecurityService : usa
+  User ..> UserSession : genera
+}
+
+' ======================
+' CONTEXTO: RESOURCES (RECURSOS)
+' ======================
+package "features.resources" {
+
+  package "Domain Models" {
+    class Employee <<Entity>> {
+      +id: number
+      +tenantId: number
+      +dni: string
+      +email: string
+      +firstName: string
+      +lastName: string
+      +phoneNumber: string
+      +positionId: number
+      +positionName: string
+      +status: 'Available'|'OnVacation'|'Occupied'
+      +changePosition(positionId): void
+      +updateStatus(status): void
+    }
+    class Vehicle <<Entity>> {
+      +id: number
+      +tenantId: number
+      +licensePlate: string
+      +loadCapacity: number
+      +paxCapacity: number
+      +status: 'Available'|'Occupied'|'Maintenance'
+      +latitude: number
+      +longitude: number
+      +imageAssetIds: number[]
+      +updateStatus(status): void
+      +updateLocation(lat, lng): void
+    }
+    class Warehouse <<Entity>> {
+      +id: number
+      +tenantId: number
+      +type: 'Client'|'Provider'|'Logistics'
+      +latitude: number
+      +longitude: number
+      +name: string
+      +address: string
+      +updateInfo(name, address, lat, lng): void
+    }
+    class Position <<Entity>> {
+      +id: number
+      +tenantId: number
+      +name: string
+      +updateName(name): void
+    }
+    class Product <<Entity>> {
+      +id: number
+      +tenantId: number
+      +name: string
+      +description: string
+      +priceAmount: number
+      +priceCurrency: string
+      +updateInfo(name, description, price): void
+    }
+  }
+
+  ' ---- VISTAS ----
+  class WarehouseManagementView <<View>> {
+    +warehouses: Warehouse[]
+    +selectedWarehouse: Warehouse | null
+    +createWarehouse(): void
+    +updateWarehouse(): void
+    +deleteWarehouse(): void
+  }
+  class VehicleManagementView <<View>> {
+    +vehicles: Vehicle[]
+    +selectedVehicle: Vehicle | null
+    +manageVehicles(): void
+  }
+  class EmployeeManagementView <<View>> {
+    +employees: Employee[]
+    +selectedEmployee: Employee | null
+    +manageEmployees(): void
+  }
+
+  ' ---- SERVICIOS ----
+  class ResourcesService <<Service>> {
+    +getEmployees(): Employee[]
+    +getVehicles(): Vehicle[]
+    +getWarehouses(): Warehouse[]
+    +getPositions(): Position[]
+    +getProducts(): Product[]
+    +create(entity): void
+    +update(entity): void
+    +delete(id): void
+  }
+
+  Employee --> Position : tiene
+
+  ResourcesService --> Employee : gestiona
+  ResourcesService --> Vehicle : gestiona
+  ResourcesService --> Warehouse : gestiona
+  ResourcesService --> Position : gestiona
+  ResourcesService --> Product : gestiona
+
+  WarehouseManagementView ..> WarehouseStore : usa
+  VehicleManagementView ..> ResourcesService : usa
+  EmployeeManagementView ..> ResourcesService : usa
+}
+
+' ======================
+' CONTEXTO: BILLING (FACTURACIÓN)
+' ======================
+package "features.billing" {
+
+  class PaymentCard <<Component>> {
+    +title: string
+    +items: string[]
+    +price: string
+    +onSelect(): void
+  }
+}
+
+' ======================
+' CONTEXTO: NOTIFICATIONS (NOTIFICACIONES)
+' ======================
+package "features.notifications" {
+
+  package "Domain Models" {
+    class Notification <<Entity>> {
+      +id: number
+      +message: string
+      +read: boolean
+      +timestamp: Date
+      +type: string
+    }
+  }
+
+  class NotificationService <<Service>> {
+    +getNotifications(): Notification[]
+    +markAsRead(id): void
+    +sendNotification(notification): void
+  }
+
+  NotificationService --> Notification : gestiona
+}
+
+' ======================
+' CONTEXTO: TRACKING (SEGUIMIENTO)
+' ======================
+package "features.tracking" {
+
+  package "Domain Models" {
+    class Route <<Entity>> {
+      +routeId: number
+      +route: RouteItem[]
+      +orders: number[]
+      +vehicleId: number
+      +addNode(node): void
+      +addOrder(orderId): void
+      +markRouteItemCompleted(warehouseId): void
+    }
+    class Container <<Entity>> {
+      +containerId: number
+      +orderId: number
+      +shipItems: ShipItem[]
+      +warehouseId: number
+      +updateCurrentNode(warehouseId): void
+      +addShipItem(item): void
+    }
+    class TrackingEvent <<Entity>> {
+      +eventId: number
+      +containerId: number
+      +warehouseId: number
+      +type: 'Arrival'|'Departure'|'Creation'
+      +eventTime: Date
+      +recordEvent(containerId, warehouseId, type): void
+    }
+  }
+
+  package "Entities" {
+    class RouteItem <<Entity>> {
+      +id: number
+      +warehouseId: number
+      +completedAt: Date | null
+      +isCompleted: boolean
+      +markAsCompleted(): void
+    }
+  }
+
+  package "Models" {
+    class ShipItem <<Model>> {
+      +productId: number
+      +quantity: number
+    }
+  }
+
+  ' ---- SERVICIOS ----
+  class TrackingService <<Service>> {
+    +createRoute(command): Route
+    +trackContainer(containerId): Container
+    +updateLocation(containerId, warehouseId): void
+    +getRouteHistory(routeId): RouteItem[]
+    +getTrackingEvents(containerId): TrackingEvent[]
+    +recordTrackingEvent(event): void
+  }
+
+  ' ---- VISTAS ----
+  class RouteTrackingView <<View>> {
+    +routes: Route[]
+    +selectedRoute: Route | null
+    +trackingEvents: TrackingEvent[]
+    +showRouteDetails(): void
+    +updateTrackingStatus(): void
+  }
+
+  Route --> RouteItem : contiene
+  Container --> ShipItem : transporta
+  TrackingEvent --> Container : registra
+  TrackingService --> Route : gestiona
+  TrackingService --> Container : rastrea
+  TrackingService --> TrackingEvent : registra
+  RouteTrackingView ..> TrackingService : usa
+}
+
+' ======================
+' CONTEXTO: HOME (INICIO)
+' ======================
+package "features.home" {
+
+  class ClientHomeView <<View>> {
+    +dashboardData: any
+    +loadDashboard(): void
+    +navigateToOrders(): void
+  }
+  class LogisticsHomeView <<View>> {
+    +operationsData: any
+    +loadOperations(): void
+    +manageOperations(): void
+  }
+}
+
+' ======================
+' CONTEXTO: CORE (NÚCLEO)
+' ======================
+package "core" {
+
+  ' ---- SERVICIOS PRINCIPALES ----
+  class LanguageService <<Service>> {
+    +currentLanguage: string
+    +availableLanguages: string[]
+    +setLanguage(lang): boolean
+    +getCurrentLanguage(): string
+    +getAvailableLanguages(): string[]
+  }
+  class LocalStorageService <<Service>> {
+    +setItem(key, value): void
+    +getItem(key): any
+    +removeItem(key): void
+    +clear(): void
+  }
+  class UxService <<Service>> {
+    +showSnackbar(options): void
+    +showConfirmDialog(options): Promise<boolean>
+    +confirm(): void
+    +cancel(): void
+  }
+
+  ' ---- MODELOS DE UI ----
+  package "UI Models" {
+    class SnackbarData <<Entity>> {
+      +message: string
+      +type: 'info'|'success'|'error'|'warning'
+      +duration: number
+      +visible: boolean
+    }
+    class ConfirmDialogData <<Entity>> {
+      +title: string
+      +message: string
+      +confirmText: string
+      +cancelText: string
+      +visible: boolean
+    }
+  }
+
+  LanguageService ..> LocalStorageService : persiste idioma
+  UxService --> SnackbarData : gestiona
+  UxService --> ConfirmDialogData : gestiona
+}
+
+' ======================
+' CONTEXTO: SHARED (COMPARTIDO)
+' ======================
+package "shared" {
+
+  ' ---- COMPONENTES BASE ----
+  class BaseButton <<Component>> {
+    +label: string
+    +type: string
+    +disabled: boolean
+    +loading: boolean
+    +color: 'primary'|'accent'|'secondary'|'success'|'error'|'warning'|'info'
+    +handleClick(): void
+  }
+  class ConfirmDialog <<Component>> {
+    +show: boolean
+    +title: string
+    +message: string
+    +onConfirm(): void
+    +onCancel(): void
+  }
+  class Snackbar <<Component>> {
+    +show: boolean
+    +message: string
+    +type: string
+    +duration: number
+  }
+  class Header <<Component>> {
+    +title: string
+    +user: any
+    +onLogout(): void
+  }
+  class Sidebar <<Component>> {
+    +menuItems: MenuItem[]
+    +collapsed: boolean
+    +onToggle(): void
+  }
+  class LanguageSwitcher <<Component>> {
+    +currentLanguage: string
+    +availableLanguages: string[]
+    +switchLanguage(lang): void
+  }
+
+  ' ---- COMPOSABLES ----
+  class UseTheme <<Composable>> {
+    +isDark: boolean
+    +toggleTheme(): void
+    +setTheme(theme): void
+  }
+
+  ' ---- MODELOS DE UI ----
+  class MenuItem <<Entity>> {
+    +id: string
+    +label: string
+    +route: string
+    +icon: string
+    +children?: MenuItem[]
+  }
+
+  Sidebar --> MenuItem : usa
+  LanguageSwitcher ..> LanguageService : usa
+  ConfirmDialog ..> UxService : usa
+  Snackbar ..> UxService : usa
+}
+
+' ======================
+' CONTEXTO: LAYOUTS (PLANTILLAS)
+' ======================
+package "layouts" {
+
+  class MainLayout <<Layout>> {
+    +showSidebar: boolean
+    +currentUser: any
+    +onSidebarToggle(): void
+  }
+  class AuthLayout <<Layout>> {
+    +title: string
+    +subtitle: string
+  }
+
+  MainLayout --> Header : incluye
+  MainLayout --> Sidebar : incluye
+}
+
+' ======================
+' CONTEXTO: STORES GLOBALES
+' ======================
+package "stores" {
+
+  class ThemeStore <<Store>> {
+    +isDark: boolean
+    +toggleTheme(): void
+    +setTheme(theme): void
+  }
+  class CounterStore <<Store>> {
+    +count: number
+    +increment(): void
+    +decrement(): void
+  }
+
+  ThemeStore ..> LocalStorageService : persiste tema
+}
+
+' ======================
+' RELACIONES INTER-CONTEXTOS
+' ======================
+OrderStore ..> UxService : notificaciones
+WarehouseStore ..> LocalStorageService : persistencia
+SecurityService ..> UxService : mensajes
+TrackingService ..> NotificationService : alertas
+ClientHomeView ..> OrderStore : datos dashboard
+LogisticsHomeView ..> WarehouseStore : datos operaciones
+Route ..> Vehicle : utiliza del contexto resources
+Container ..> Product : transporta del contexto resources
+TrackingEvent ..> Warehouse : registra en del contexto resources
+
+@enduml
