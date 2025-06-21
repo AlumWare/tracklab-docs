@@ -1,59 +1,335 @@
 @startuml
 package tracklab-backend as tracklab_backend  {
     package tracking {
+        package application {
+            package internal {
+                package commandservices {
+                    class ContainerCommandService {
+                        - IContainerRepository _containerRepository
+                        + ContainerCommandService(IContainerRepository containerRepository)
+                        + Task<Container> CreateAsync(CreateContainerCommand command)
+                        + Task<Container> UpdateCurrentNodeAsync(UpdateContainerNodeCommand command)
+                    }
+                    class RouteCommandService {
+                        - IRouteRepository _routeRepository
+                        + RouteCommandService(IRouteRepository routeRepository)
+                        + Task<RouteAggregate> CreateAsync(CreateRouteCommand command)
+                        + Task<RouteAggregate> AddNodeAsync(AddNodeCommand command)
+                        + Task<RouteAggregate> AddOrderAsync(AddOrderToRouteCommand command)
+                    }
+                    class TrackingEventCommandService {
+                        - ITrackingEventRepository _trackingEventRepository
+                        + TrackingEventCommandService(ITrackingEventRepository trackingEventRepository)
+                        + Task<TrackingEvent> CreateAsync(CreateTrackingEventCommand command)
+                    }
+                }
+                package queryservices {
+                    class ContainerQueryService {
+                        - IContainerRepository _containerRepository
+                        + ContainerQueryService(IContainerRepository containerRepository)
+                        + Task<IEnumerable<Container>> Handle(GetAllContainersQuery query)
+                        + Task<Container?> Handle(GetContainerByIdQuery query)
+                    }
+                    class RouteQueryService {
+                        - IRouteRepository _routeRepository
+                        + RouteQueryService(IRouteRepository routeRepository)
+                        + Task<IEnumerable<RouteAggregate>> Handle(GetAllRoutesQuery query)
+                        + Task<RouteAggregate?> Handle(GetAllRouteByIdQuery query)
+                    }
+                    class TrackingEventQueryService {
+                        - ITrackingEventRepository _trackingEventRepository
+                        + TrackingEventRepository(ITrackingEventRepository trackingEventRepository)
+                        + Task<IEnumerable<TrackingEvent>> Handle(GetAllTrackingEventsQuery query)
+                        + Task<TrackingEvent?> Handle(GetTrackingEventByIdQuery query)
+                    }
+                }
+            }
+        }
         package domain {
             package model {
                 package aggregates {
-                    class Route <<AggregateRoot>> {
-                        - Long RouteId
-                        - List<RouteItem> Route  // Lista de nodos (almacenes)
-                        - List<OrderId> orders  // Orders que satisface la ruta (puede ser parcialmente)
-                        -
-                        - VehicleId vehicleId
-                        + Route(CreateRouteCommand command)
-                        + void AddNode(Node node)
-                        + void AddOrder(Order order)
-                    }
-
-
                     class Container {
-                        - Long ContainerId
-                        - Long OrderId
-                        - List<shipItem> shipItems  // Productos de la orden que se están transportando
-                        - WarehouseId warehouseId  // Nodo actual en el que está el container
+                        + long ContainerId
+                        + OrderId OrderId
+                        + List<ShipItem> ShipItems
+                        + WarehouseId WarehouseId
+                        + Container()
                         + Container(CreateContainerCommand command)
-                        + void UpdateCurrentNode(Node node)
+                        + void UpdateCurrentNode(UpdateContainerNodeCommand command)
                     }
-
+                    class Route {
+                        + long RouteId
+                        + List<RouteItem> RouteItems
+                        + List<OrderId> Orders
+                        + VehicleId VehicleId
+                        + Route()
+                        + Route(CreateRouteCommand command)
+                        + void AddNode(AddNodeCommand command)
+                        + void AddOrder(AddOrderToRouteCommand command)
+                    }
                     class TrackingEvent {
-                        - Long EventId
-                        - Long ContainerId
-                        - Long WarehouseId // tal vez como VO
-                        - EventType Type  // Entrada o salida
-                        - Date EventTime  // Hora del evento
-                        + TrackingEvent(Long containerId, Long nodeId, EventType type, Date eventTime)
+                        + long EventId
+                        + long ContainerId
+                        + WarehouseId WarehouseId
+                        + EventType Type
+                        + DateTime EventTime
+                        + TrackingEvent()
+                        + TrackingEvent(CreateTrackingEventCommand command)
                     }
                 }
+                package commands {
+                    class AddNodeCommand {
 
-                package Entities{
+                    }
+                    class AddOrderToRouteCommand {
+
+                    }
+                    class CreateContainerCommand {
+                        + long OrderId
+                        + long WarehouseId
+                        + IEnumerable<ShipItem> ShipItems
+                    }
+                    class CreateRouteCommand {
+                        
+                    }
+                    class CreateTrackingEventCommand {
+                        + long ContainerId
+                        + long WarehouseId
+                        + EventType Type
+                        + DateTime EventTime
+                    }
+                    class UpdateContainerNodeCommand {
+
+                    }
+                }
+                package entities {
                     class RouteItem {
-                        - Id
-                        - WarehouseId warehouseId
-                        - DateTime completedAt
-                        - Boolean IsCompleted  // Indica si el nodo fue completado (carga/descarga)
-                        + Node()
+                        + long Id
+                        + WarehouseId WarehouseId
+                        + DateTime? CompletedAt
+                        + bool IsCompleted
+                        + RouteItem()
+                        + RouteItem(WarehouseId warehouseId)
                         + void MarkAsCompleted()
+                    }
+                }
+                package queries {
+                    class GetAllContainersQuery {
+                        + int? PageSize
+                        + int? PageNumber
+                        + long? OrderId
+                        + long? WarehouseId
+                        + GetAllContainersQuery(int? pageSize, int? pageNumber, long? orderId, long? warehouseId)
+                    }
+                    class GetAllRoutesByIdQuery {
+                        + int? PageSize
+                        + int? PageNumber
+                        + long? VehicleId
+                        + long? OrderId
+                        + GetAllRoutesQuery(int? pageSize, int? pageNumber, long? vehicleId, long? orderId)
+                    }
+                    class GetAllTrackingEventsQuery {
+                        + int? PageSize
+                        + int? PageNumber
+                        + long? ContainerId
+                        + long? WarehouseId
+                        + DateTime? FromDate
+                        + DateTime? ToDate
+                        + GetAllTrackingEventsQuery(int? pageSize, int? pageNumber, long? containerId, long? warehouseId, DateTime? fromDate, DateTime? toDate)
+                    }
+                    class GetContainerByIdQuery {
+                        + long Id
+                        + GetContainerByIdQuery(long id)
+                    }
+                    class GetRouteByIdQuery {
+                        + long Id
+                        + GetRouteByIdQuery(long id)
+                    }
+                    class GetTrackingEventByIdQuery {
+                        + long Id
+                        + GetTrackingEventByIdQuery(long id)
                     }
                 }
                 package valueobjects {
                     enum EventType {
-                        Arrival  // Cuando un container llega al nodo
-                        Departure  // Cuando un container sale del nodo
-                        Creation //Momento de creación
+                        Arrival
+                        Departure
+                        Creation
                     }
-                    class shipItem{
-                        Long productId
-                        Long quantity
+                    class OrderId {
+                        + long Value
+                        + OrderId()
+                        + OrderId(long value)
+                        + string ToString()
+                        + operator long(OrderId id)
+                        + operator OrderId(long value)
+                    }
+                    class ShipItem {
+
+                    }
+                    class VehicleId {
+                        + long Value
+                        + VehicleId()
+                        + VehicleId(long value)
+                        + string ToString()
+                        + operator long(VehicleId id)
+                        + operator VehicleId(long value)
+                    }
+                    class WarehouseId {
+                        + long Value
+                        + WarehouseId()
+                        + WarehouseId(long value)
+                        + string ToString()
+                        + operator long(WarehouseId id)
+                        + operator WarehouseId(long value)
+                    }
+                }
+            }
+            package repositories {
+                interface IContainerRepository {
+                    + Task<IEnumerable<Container>> GetAllAsync(GetAllContainersQuery query)
+                    + Task<Container?> GetByIdAsync(GetContainerByIdQuery query)
+                }
+                interface IRouteRepository {
+                    + Task<IEnumerable<RouteAggregate>> GetAllAsync(GetAllRoutesQuery query)
+                    + Task<RouteAggregate?> GetByIdAsync(GetRouteByIdQuery query)
+                }
+                interface ITrackingEventRepository {
+                    + Task<IEnumerable<TrackingEvent>> GetAllAsync(GetAllTrackingEventsQuery query)
+                    + Task<TrackingEvent?> GetByIdAsync(GetTrackingEventByIdQuery query)
+                }
+            }
+            package services {
+                interface IContainerCommandService {
+                    + Task<Container> CreateAsync(CreateContainerCommand command)
+                    + Task<Container> UpdateCurrentNodeAsync(UpdateContainerNodeCommand command)
+                }
+                interface IContainerQueryService {
+                    + Task<IEnumerable<Container>> Handle(GetAllContainersQuery query)
+                    + Task<Container?> Handle(GetContainerByIdQuery query)
+                }
+                interface IRouteCommandService {
+                    + Task<RouteAggregate> CreateAsync(CreateRouteCommand command)
+                    + Task<RouteAggregate> AddNodeAsync(AddNodeCommand command)
+                    + Task<RouteAggregate> AddOrderAsync(AddOrderToRouteCommand command)
+                }
+                interface IRouteQueryService {
+                    + Task<IEnumerable<RouteAggregate>> Handle(GetAllRoutesQuery query)
+                    + Task<RouteAggregate> Handle(GetRouteByIdQuery query)
+                }
+                interface ITrackingEventCommandService {
+                    + Task<TrackingEvent> CreateAsync(CreateTrackingEventCommand command)
+                }
+                interface ITrackingEventQueryService {
+                    + Task<IEnumerable<TrackingEvent>> Handle(GetAllTrackingEventsQuery query)
+                    + Task<TrackingEvent?> Handle(GetTrackingEventByIdQuery query)
+                }
+            }
+        }
+        package infraestructure {
+            package persistence {
+                package efc {
+                    package repositories {
+                        class ContainerRepository {
+                            - ITenantContext _tenantContext
+                            + ContainerRepository(AppDbContext context, ITenantContext tenantContext)
+                            - IQueryable<Container> GetTenantFilteredQuery()
+                            + Task<IEnumerable<Container>> GetAllAsync(GetAllContainersQuery query)
+                            + Task<Container?> GetByIdAsync(GetContainerByIdQuery query)
+                        }
+                        class RouteRepository {
+                            - ITenantContext _tenantContext
+                            + RouteRepository(AppDbContext context, ITenantContext tenantContext)
+                            - IQueryable<RouteAggregate> GetTenantFilteredQuery()
+                            + Task<IEnumerable<RouteAggregate>> GetAllAsync(GetAllRoutesQuery query)
+                            + Task<RouteAggregate?> GetByIdAsync(GetRouteByIdQuery query)
+                        }
+                        class TrackingEventRepository {
+                            - ITenantContext _tenantContext
+                            + TrackingEventRepositoryRepository(AppDbContext context, ITenantContext tenantContext)
+                            - IQueryable<TrackingEventRepository> GetTenantFilteredQuery()
+                            + Task<IEnumerable<TrackingEvent>> GetAllAsync(GetAllTrackingEventsQuery query)
+                            + Task<TrackingEvent?> GetByIdAsync(GetTrackingEventByIdQuery query)
+                        }
+                    }
+                }
+            }
+        }
+        package interfaces {
+            package rest {
+                package controllers {
+                    class ContainerController {
+                        - IContainerCommandService _containerCommandService
+                        - IContainerQueryService _containerQueryService
+                        + ContainerController(IContainerCommandService containerCommandService, IContainerQueryService containerQueryService)
+                        + Task<ActionResult<IEnumerable<ContainerResource>>> GetAll()
+                        + Task<ActionResult<ContainerResource>> Create([FromBody] CreateContainerCommand command)
+                        + Task<ActionResult<ContainerResource>> UpdateCurrentNode(long id, [FromBody] UpdateContainerNodeCommand command)
+                    }
+                    class RouteController {
+                        - IRouteCommandService _routeCommandService
+                        - IRouteQueryService _routeQueryService
+                        + RouteController(IRouteCommandService routeCommandService, IRouteQueryService routeQueryService)
+                        + Task<ActionResult<IEnumerable<RouteResource>>> GetAll()
+                        + Task<ActionResult<RouteResource>> GetById(long id)
+                        + Task<ActionResult<RouteResource>> Create([FromBody] CreateRouteCommand command)
+                        + Task<ActionResult<RouteResource>> AddNode(long id, [FromBody] AddNodeCommand command)
+                        + Task<ActionResult<RouteResource>> AddOrder(long id, [FromBody] AddOrderToRouteCommand command)
+                    }
+                    class TrackingEventController {
+                        - ITrackingEventCommandService _trackingEventCommandService
+                        - ITrackingEventQueryService _trackingEventQueryService
+                        + TrackingEventController(ITrackingEventCommandService trackingEventCommandService, ITrackingEventQueryService trackingEventQueryService)
+                        + Task<ActionResult<IEnumerable<TrackingEventResource>>> GetAll()
+                        + Task<ActionResult<TrackingEventResource>> GetById(long id)
+                        + Task<ActionResult<TrackingEventResource>> Create([FromBody] CreateTrackingEventCommand command)
+                    }
+                }
+                package resources {
+                    class ContainerResource {
+                        + long ContainerId
+                        + long OrderId
+                        + long WarehouseId
+                        + IEnumerable<ShipItemResource> ShipItems
+                    }
+                    class ShipItemResource {
+                        + long ProductId
+                        + long Quantity
+                    }
+                    class RouteResources {
+                        + long RouteId
+                        + long VehicleId
+                        + IEnumerable<RouteItemResource> RouteItems
+                        + IEnumerable<long> Orders
+                    }
+                    class RouteItemResource {
+                        + long Id
+                        + long WarehouseId
+                        + bool IsCompleted
+                        + DateTime? CompletedAt
+                    }
+                    class TrackingEventResource {
+                        + long EventId
+                        + long ContainerId
+                        + long WarehouseId
+                        + string Type
+                        + DateTime EventTime
+                    }
+                }
+                package transformers {
+                    class ContainerResourceFromEntityAssembler {
+                        + ContainerResource ToREsourceFromEntity(Container container)
+                        + IEnumerable<ContainerResource> ToResourceFromEntities(IEnumerable<Container> containers)
+                        + ShipItemResource ToShipItemResourceFromEntity(ShipItem item)
+                    }
+                    class RouteResourceFromEntityAssembler {
+                        + RouteResource ToResourceFromEntity(RouteAggregate route)
+                        + IEnumerable<RouteResource> ToResourceFromEntities(IEnumerable<RouteAggregate> routes)
+                        + RouteItemResource ToRouteItemResourceFromEntity(RouteItem item)
+                    }
+                    class TrackingEventResourceFromEntityAssembler {
+                        + TrackingEventResource ToResourceFromEntity(TrackingEvent trackingEvent)
+                        + IEnumerable<TrackingEventResource> ToResourceFromEntities (IEnumerable<TrackingEvent> events)
                     }
                 }
             }

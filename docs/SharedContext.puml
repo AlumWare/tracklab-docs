@@ -1,6 +1,6 @@
 @startuml
 package tracklab-backend as tracklab_backend {
-  package template {
+  package shared {
     package domain {
       package repositories {
         interface IBaseRepository<TEntity> {
@@ -154,3 +154,5 @@ package tracklab-backend as tracklab_backend {
     }
   }
 }
+
+@enduml

@@ -1,6 +1,6 @@
 @startuml
 package tracklab-backend as tracklab_backend {
-    package template {
+    package iam {
         package application {
             package internal {
                 package commandservices {
@@ -361,3 +361,4 @@ package tracklab-backend as tracklab_backend {
         }
     }
 }
+@enduml
