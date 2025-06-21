@@ -1,160 +1,654 @@
 @startuml
 package tracklab-backend as tracklab_backend  {
-    ' Bounded Context
-    package template {
-        package domain {
-              package model {
-                package aggregates {
-                  class Vehicle <<AggregateRoot>> {
-                    - Long Id
-                    - TenantId TenantId
-                    - String LicensePlate
-                    - BigDecimal LoadCapacity
-                    - int PaxCapacity
-                    - EVehicleStatus Status
-                    - Coordinates Location
-                    - List<Long> ImageAssetIds
-                    + Vehicle(CreateVehicleCommand command)
-                    + void UpdateStatus(EVehicleStatus newStatus)
-                  }
-
-                  class Employee <<AggregateRoot>> {
-                    - Long Id
-                    - TenantId TenantId
-                    - Dni Dni
-                    - Email Email
-                    - String FirstName
-                    - String LastName
-                    - String PhoneNumber
-                    - Position Position
-                    - EEmployeeStatus Status
-                    + Employee(CreateEmployeeCommand command)
-                    + void ChangePosition(Position newPosition)
-                    + void UpdateStatus(EEmployeeStatus newStatus)
-                  }
-
-                  class Warehouse <<AggregateRoot>> {
-                    - Long Id
-                    - TenantId TenantId
-                    - EWarehouseType Type
-                    - Coordinates Coordinates
-                    - String Name
-                    - StreetAddress Address
-                    + Warehouse(CreateWarehouseCommand command)
-                    + void UpdateInfo(String name, StreetAddress address, Coordinates coords)
-                  }
-
-                  class Position <<AggregateRoot>> {
-                    - Long Id
-                    - TenantId TenantId
-                    - String Name
-                    + Position(CreatePositionCommand command)
-                    + void UpdateName(String newName)
-                  }
-                  class Product <<AggregateRoot>> {
-                      - Long Id
-                      - TenantId TenantId
-                      - String Name
-                      - String Description
-                      - Price Price
-                      + Product(CreateProductCommand command)
-                      + void UpdateInfo(String name, String description, Price price)
-                  }
-                }
-
-                package valueobjects {
-                  class Coordinates {
-                    - double Latitude
-                    - double Longitude
-                  }
-
-                  class Email {
-                    - String Value
-                  }
-
-                  class StreetAddress {
-                    - String Value
-                  }
-
-                  class Dni {
-                    - String Value
-                  }
-                  enum EVehicleStatus {
-                    Available
-                    Occupied
-                    Maintenance
-                  }
-
-                  enum EEmployeeStatus {
-                    Available
-                    OnVacation
-                    Occupied
-                  }
-
-                  enum EWarehouseType {
-                    Client
-                    Provider
-                    Logistics
-                  }
-                }
-              }
+  ' Bounded Context
+  package resource {
+    package domain {
+      package model {
+        package aggregates {
+          class Vehicle <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - String LicensePlate
+            - BigDecimal LoadCapacity
+            - int PaxCapacity
+            - EVehicleStatus Status
+            - Coordinates Location
+            - List<Long> ImageAssetIds
+            + Vehicle(CreateVehicleCommand command)
+            + void UpdateStatus(EVehicleStatus newStatus)
+          }
+          class Employee <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - Dni Dni
+            - Email Email
+            - String FirstName
+            - String LastName
+            - String PhoneNumber
+            - Position Position
+            - EEmployeeStatus Status
+            + Employee(CreateEmployeeCommand command)
+            + void ChangePosition(Position newPosition)
+            + void UpdateStatus(EEmployeeStatus newStatus)
+          }
+          class Warehouse <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - EWarehouseType Type
+            - Coordinates Coordinates
+            - String Name
+            - StreetAddress Address
+            + Warehouse(CreateWarehouseCommand command)
+            + void UpdateInfo(String name, StreetAddress address, Coordinates coords)
+          }
+          class Position <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - String Name
+            + Position(CreatePositionCommand command)
+            + void UpdateName(String newName)
+          }
+          class Product <<AggregateRoot>> {
+            - Long Id
+            - TenantId TenantId
+            - String Name
+            - String Description
+            - Price Price
+            + Product(CreateProductCommand command)
+            + void UpdateInfo(String name, String description, Price price)
+          }
         }
-        package infrastructure {
-            package persistence {
-                package jpa {
-                    ' Interfaces que implementan el patrón Repository para la persistencia de datos
-                }
-            }
+        package commands {
+          class ChangeEmployeePositionCommand {
+            + long employeeId
+            + long NewPositionId
+          }
+          class CreateEmployeeCommand {
+            + string Dni
+            + string Email
+            + string FirstName
+            + string LastName
+            + string PhoneNumber
+            + long PositionId
+          }
+          class CreatePositionCommand {
+
+          }
+          class CreateProductCommand {
+            + string Name
+            + string Description
+            + decimal PriceAmount
+            + string PriceCurrency
+          }
+          class CreateVehicleCommand {
+            + string LicensePlate
+            + decimal LoadCapacity
+            + int PaxCapacity
+            + Coordinates Location
+          }
+          class CreateWarehouseCommand {
+            + string Name
+            + EWarehouseType Type
+            + double Latitude
+            + double Longitude
+            + string Address
+          }
+          class DeleteEmployeeCommand {
+
+          }
+          class DeletePositionCommand {
+
+          }
+          class DeleteProductCommand {
+
+          }
+          class DeleteVehicleCommand {
+
+          }
+          class DeleteWarehouseCommand {
+
+          }
+          class UpdateEmployeeStatusCommand {
+            + long EmployeeId
+            + EEmployeeStatus NewStatus
+          }
+          class UpdatePositionNameCommand {
+
+          }
+          class UpdateProductInfoCommand {
+            + long productId
+            + string Name
+            + string Description
+            + decimal PriceAmount
+            + string PriceCurrency
+          }
+          class UpdateVehicleInfoCommand {
+            + long VehicleId
+            + string NewLicensePlate
+            + decimal NewLoadCapacity
+            + int NewPaxCapacity
+            + Coordinates NewLocation
+          }
+          class UpdateVehicleStatusCommand {
+            + long VehicleId
+            + EVehicleStatus NewStatus
+          }
+          class UpdateWarehouseInfoCommand {
+            + long WarehouseId
+            + string Name
+            + double Latitude
+            + double Longitude
+            + string Address
+          }
         }
-        package application {
-            package internal {
-                package commandservices {
-                    ' Clases que implementan las interfaces de servicios de comandos, ejecutando lógica de negocios relacionada con cambios de estado
-                }
-                package queryservices {
-                    ' Clases que implementan las interfaces de servicios de consultas, para la obtención de datos del sistema
-                }
-            }
+        package query {
+          class GetAllEmployeesQuery {
+            + int? PageSize
+            + int? PageNumber
+            + string? Status
+            + string? Position
+            + GetAllEmployeesQuery(int? pageSize, int? pageNumber, string? status, string? position)
+          }
+          class GetAllPositionsQuery {
+            + int? PageSize
+            + int? PageNumber
+            + string? Department
+            + bool? IsActive
+            + GetAllPositionsQuery(int? pageSize, int? pageNumber, string? department, bool? isActive)
+          }
+          class GetAllProductsQuery {
+            + int? PageSize
+            + int? PageNumber
+            + string? Name
+            + string? Category
+            + decimal? MinPrice
+            + decimal? MaxPrice
+            + GetAllProductsQuery(int? pageSize, int? pageNumber, string? name, string? category, decimal? minPrice, decimal? maxPrice)
+          }
+          class GetAllVehiclesQuery {
+            + int? PageSize
+            + int? PageNumber
+            + string? Status
+            + string? Type
+            + string? LicensePlate
+            + GetAllVehiclesQuery(int? pageSize, int? pageNumber, string? status, string? type, string? licensePlate)
+          }
+          class GetAllWarehousesQuery {
+            + int? PageSize
+            + int? PageNumber
+            + string? Location
+            + string? Type
+            + bool? IsActive
+            + GetAllWarehousesQuery(int? pageSize, int? pageNumber, string? location, string? type, bool? isActive)
+          }
+          class GetEmployeeByIdQuery {
+            + long Id
+            + GetEmployeeByIdQuery(long id)
+          }
+          class GetPositionByIdQuery {
+            + long Id
+            + GetPositionByIdQuery(long id)
+          }
+          class GetProductByIdQuery {
+            + long Id
+            + GetProductByIdQuery(long id)
+          }
+          class GetVehicleByIdQuery {
+            + long Id
+            + GetVehicleByIdQuery(long id)
+          }
+          class GetWarehouseByIdQuery{
+            + long Id
+            + GetWarehouseByIdQuery(long id)
+          }
         }
-        package interfaces {
-            package rest {
-                package resources {
-                    ' Clases de tipo record que funcionan como DTOs (Data Transfer Objects), siguiendo los principios REST (se tratan como recursos)
-                }
-                package transform {
-                    ' Clases con métodos estáticos para mapear entre recursos, comandos, consultas o entidades
-                    ' Equivalente al patrón Assembler, puede ser denominado de esta manera
-                }
-                package controllers {
-                    ' Clases que exponen los endpoints REST del sistema, permitiendo la interacción con el cliente
-                }
-            }
+        package valueobjects {
+          class Coordinates {
+            - double Latitude
+            - double Longitude
+          }
+          class Email {
+            - String Value
+          }
+          class StreetAddress {
+            - String Value
+          }
+          class Dni {
+            - String Value
+          }
+          enum EVehicleStatus {
+            Available
+            Occupied
+            Maintenance
+          }
+          enum EEmployeeStatus {
+            Available
+            OnVacation
+            Occupied
+          }
+          enum EWarehouseType {
+            Client
+            Provider
+            Logistics
+          }
         }
+      }
+      package repositories {
+        interface IEmployeeRepository {
+
+        }
+        interface IPositionRepository {
+
+        }
+        interface IProductRepository {
+
+        }
+        interface IVehicleRepository {
+
+        }
+        interface IWarehouseRepository {
+
+        }
+      }
+      package services {
+        interface IEmployeeCommandService {
+          + Task<Employee> Handle(CreateEmployeeCommand command)
+          + Task Handle(UpdateEmployeeStatusCommand command)
+          + Task Handle(ChangeEmployeePositionCommand command)
+          + Task Handle(DeleteEmployeeCommand command)
+        }
+        interface IEmployeeQueryService {
+          + Task<IEnumerable<Employee>> Handle(GetAllEmployeesQuery query)
+          + Task<Employee?> Handle(GetEmployeeByIdQuery query)
+        }
+        interface IPositionCommandService {
+          + Task<Position> Handle(CreatePositionCommand command)
+          + Task Handle(UpdatePositionNameCommand command)
+          + Task Handle(DeletePositionCommand command)
+        }
+        interface IPositionQueryService {
+          + Task<IEnumerable<Position>> Handle(GetAllPositionsQuery query)
+          + Task<Position?> Handle(GetPositionByIdQuery query)
+        }
+        interface IProductCommandService {
+          + Task<Product> CreateAsync(CreateProductCommand command)
+          + Task<Product> UpdateAsync(UpdateProductInfoCommand command)
+          + Task DeleteAsync(DeleteProductCommand command)
+        }
+        interface IProductQueryService {
+          + Task<IEnumerable<Product>> Handle(GetAllProductsQuery query)
+          + Task<Product?> Handle(GetProductByIdQuery query)
+        }
+        interface IVehicleCommandService {
+          + Task<Vehicle> Handle(CreateVehicleCommand command)
+          + Task Handle(UpdatVehicleStatusCommand command)
+          + Task Handle(UpdateVehicleInfoCommand command)
+          + Task Handle(DeleteVehicleCommand command)
+        }
+        interface IVehicleQueryService {
+          + Task<IEnumerable<Vehicle>> Handle(GetAllVehiclesQuery query)
+          + Task<Vehicle?> Handle(GetVehicleByIdQuery query)
+        }
+        interface IWarehouseCommandService {
+          + Task<Warehouse> Handle(CreateWarehouseCommand command)
+          + Task Handle(UpdateWarehouseInfoCommand command)
+          + Task Handle(DeleteWarehouseCommand command)
+        }
+        interface IWarehouseQueryService {
+          + Task<IEnumerable<Warehouse>> Handle(GetAllWarehousesQuery query)
+          + Task<Warehouse?> Handle(GetWarehouseByIdQuery query)
+        }
+      }
     }
-    package shared{
-        package domain.model{
-            package aggregates{
-                class Asset <<AggregateRoot>> {
-                  - Long Id
-                  - TenantId TenantId
-                  - String PublicId
-                  - String Url
-                  + Asset(CreateAssetCommand command)
-                }
+    package infrastructure {
+      package persistence {
+        package efc {
+          package repositories {
+            class EmployeeRepository {
+              - ITenantContext _tenantContext
+              - IQueryable<Employee> GetTenantFilteredQuery()
+              + Task<IEnumerable<Employee>> ListAsync()
+              + Task<Employee?> FindByIdAsync(long id)
+              + Employee SaveAsync(Employee employee)
+              + void DeleteAsync(Employee employee)
+              + Task<(IEnumerable<Employee> Employees, int TotalCount)> FindPaginatedsync(int page, int size, string? searchTerm)
+              + Task<IEnumerable<Employee>> FindByStatusAsync(string status)
+              + Task<IEnumerable<Employee>> FindByPositionAsync(long positionId)
             }
-            package valueobjects {
-                class TenantId {
-                  -Long Id
-                }
-                class Price <<ValueObject>> {
-                    - BigDecimal Amount
-                    - String Currency
-                    + Price(BigDecimal amount, String currency)
-                }
-
+            class PositionRepository {
+              - ITenantContext _tenantContext
+              + PositionRepository(AppDbContext context, ITenantContext tenantContext)
+              - IQueryable<Position> GetTenantFilteredQuery()
+              + Task<IEnumerable<Position>> ListAsync()
+              + Task<Position?> FindByIdAsync(long id)
+              + Position SaveAsync(Position position)
+              + void DeleteAsync(Position position)
+              + Task<(IEnumerable<Position>, int TotalCount)> FindPaginatedAsync(int page, int size, string? searchTerm)
+              + Task<IEnumerable<Position>> FindByNameAsync(string name)
             }
+            class ProductRepository {
+              - ITenantContext _tenantContext
+              + public ProductRepository(AppDbContext context, ITenantContext tenantContext)
+              - IQueryable<Product> GetTenantFilteredQuery()
+              + Task<IEnumerable<Product>> GetAllAsync(GetAllProductsQuery query)
+              + Task<Product?> GetByIdAsync(GetProductByIdQuery query)
+              + Task<Product?> FindByIdAsync(long id)
+            }
+            class VehicleRepository {
+              - ITenantContext _tenantContext
+              + VehicleRepository(AppDbContext context, ITenantContext tenantContext)
+              - IQueryable<Vehicle> GetTenantFilteredQuery()
+              + Task<IEnumerable<Vehicle>> ListAsync()
+              + Task<Vehicle?> FindByIdAsync(long id)
+              + Vehicle SaveAsync(Vehicle vehicle)
+              + void DeleteAsync(Vehicle vehicle)
+              + Task<(IEnumerable<Vehicle> Vehicles, int TotalCount)> FindPaginatedAsync(int page, int size, string? searchTerm)
+              + Task<IEnumerable<Vehicle>> FindByStatusAsync(string status)
+              + Task<IEnumerable<Vehicle>> FindByLicensePlateAsync(string licensePlate)
+              + Task<Vehicle?> FindByLicensePlateExactAsync(string licensePlate)
+            }
+            class WarehouseRepository {
+              - ITenantContext _tenantContext
+              + WarehouseRepository(AppDbContext context, ItenantContext tenantContext)
+              - IQueryable<Warehouse> GetTenantFilteredQuery()
+              + Task<IEnumerable<Warehouse>> ListAsync()
+              + Task<Warehouse?> FindByIdAsync(long id)
+              + Warehouse SaveAsync(Warehouse warehouse)
+              + void DeleteAsync(Warehouse warehouse)
+              + Task<(IEnumerable<Warehouse> Warehouses, int TotalCount)> FindPaginatedAsync(int page, int size, string? searchTerm)
+              + Task<IEnumerable<Warehouse>> FindByTypeAsync(string type)
+              + Task<IEnumerable<Warehouse>> FindByNameAsync(string name)
+              + Task<IEnumerable<Warehouse>> FindByLocationAsync(string location)
+            }
+          }
         }
+      }
     }
+    package application {
+      package internal {
+        package commandservices {
+          ' Clases que implementan las interfaces de servicios de comandos, ejecutando lógica de negocios relacionada con cambios de estado
+          class EmployeeCommandService {
+            + EmployeeCommandService(IEmployeeRepository employeeRepository)
+            + Task<Employee> Handle(CreateEmployeeCommand command)
+            + Task Handle(UpdateEmploteeStatusCommand command)
+            + Task Handle(ChangeEmployeePositionCommand command)
+            + Task Handle(DeleteEmployeeCommand command)
+          }
+          class PositionCommandService {
+            - IPositionRepository _positionRepository
+            + PositionCommandService(IPositionRepository positionRepository)
+            + Task<Position> Handle(CreatePositionCommand command)
+            + Task Handle(UpdatePositionNameCommand command)
+            + Task Handle(DeletePositionCommand command)
+          }
+          class ProductCommandService {
+            - IProductRepository _productRepository
+            + ProductCommandService(IProductRepository productRepository)
+            + Task<Product> CreateAsync(CreateProductCommand command)
+            + Task<Product> UpdateAsync(UpdateProductInfoCommand command)
+            + Task DeleteAsync(DeleteProductCommand command)
+          }
+          class VehicleCommandService {
+            - IVehicleRepository _vehicleRepository
+            + VehicleCommandService(IVehicleRepository vehicleRepository)
+            + Task<Vehicle> Handle(CreateVehicleCommand command)
+            + Task Handle(UpdateVehicleStatusCommand command)
+            + Task Handle(UpdateVehicleInfoCommand command)
+            + Task Handle(DeleteVehicleCommand command)
+          }
+          class WarehouseCommandService {
+            - IWarehouseRepository _warehouseRepository
+            + WarehouseCommandService(IWarehouseRepository warehouseRepository)
+            + Task<Warehouse> Handle(CreateWarehouseCommand command)
+            + Task Handle(UpdateWarehouseInfoCommand command)
+            + Task Handle(DeleteWarehouseCommand command)
+          }
+        }
+        package queryservices {
+          ' Clases que implementan las interfaces de servicios de consultas, para la obtención de datos del sistema
+          class EmployeeQueryService {
+            - IEmployeeRepository _employeeRepository
+            + EmployeeQueryService(IEmployeeRepository employeeRepository)
+            + Task<IEnumerable<Employee>> Handle(GetAllEmployeesQuery query)
+            + Task<Employee?> Handle(GetEmployeeByIdQuery query)
+          }
+          class PositionQueryService {
+            - IPositionRepository _positionRepository
+            + PositionQueryService(IPositionRepository positionRepository)
+            + Task<IEnumerable<Position>> Handle(GetAllPositionsQuery query)
+            + Task<Position?> Handle(GetPositionByIdQuery query)
+          }
+          class ProductQueryService {
+            - IProductRepository _productRepository
+            + ProductQueryService(IProductRepository productRepository)
+            + Task<IEnumerable<Product>> Handle(GetAllProductsQuery query)
+            + Task<Product?> Handle(GetProductByIdQuery query)
+          }
+          class VehicleQueryService {
+            - IVehicleRepository _vehicleRepository
+            + VehicleQueryService(IVehicleRepository vehicleRepository)
+            + Task<IEnumerable<Vehicle>> Handle(GetAllVehiclesQuery query)
+            + Task<Vehicle?> Handle(GetVehicleByIdQuery query)
+          }
+          class WarehouseQueryService {
+            - IWarehouseRepository _warehouseRepository
+            + WarehouseQueryService(IWarehouseRepository warehouseRepository)
+            + Task<IEnumerable<Warehouse>> Handle(GetAllWarehousesQuery query)
+            + Task<Warehouse?> Handle(GetWarehouseByIdQuery query)
+          }
+        }
+      }
+    }
+    package interfaces {
+      package rest {
+        package resources {
+          ' Clases de tipo record que funcionan como DTOs (Data Transfer Objects), siguiendo los principios REST (se tratan como recursos)
+          class CreateEmployeeResource {
+            + string Dni
+            + string Email
+            + string FirstName
+            + string LastName
+            + string PhoneNumber
+            + long PositionId
+          }
+          class CreatePositionResource {
+
+          }
+          class CreateProductResource {
+            + string Name
+            + string Description
+            + decimal PriceAmount
+            + string PriceCurrency
+          }
+          class CreateVehicleResource {
+            + string LicensePlate
+            + decimal LoadCapacity
+            + int PaxCapacity
+            + double Latitude
+            + double Longitude
+          }
+          class CreateWarehouseResource {
+            + string Name
+            + string Type
+            + double Latitude
+            + double Longitude
+            + string Address
+          }
+          class EmployeeResource {
+            + long Id
+            + string Dni
+            + string Email
+            + string FirstName
+            + string LastName
+            + string PhoneNumber
+            + string Status
+            + long PositionId
+          }
+          class PositionResource {
+
+          }
+          class ProductResource {
+            + long Id
+            + string Name
+            + string Description
+            + string PriceAmount
+            + string PriceCurrency
+          }
+          class UpdateEmployeeResource {
+            + string FirstName
+            + string LastName
+            + string PhoneNumber
+            + long PositionId
+          }
+          class UpdatePositionResource {
+
+          }
+          class UpdateProductResource {
+            + string Name
+            + string Description
+            + decimal PriceAmount
+            + string PriceCurrency
+          }
+          class UpdateVehicleResource {
+            + string NewLicensePlate
+            + decimal NewLoadCapacity
+            + int NewPaxCapacity
+            + double NewLatitude
+            + double NewLongitude
+          }
+          class UpdateWarehouseResource {
+            + string Name
+            + double Latitude
+            + double Longitude
+            + string Address
+          }
+          class VehicleResource {
+            + long Id
+            + string LicensePlate
+            + decimal LoadCapacity
+            + int PaxCapacity
+            + string Status
+            + double Latitude
+            + double Longitude
+            + List<long> ImageAssetIds
+          }
+          class WarehouseResource {
+            + long Id
+            + string Name
+            + string Type
+            + double Latitude
+            + double Longitude
+            + string Address
+          }
+        }
+        package transformers {
+          ' Clases con métodos estáticos para mapear entre recursos, comandos, consultas o entidades
+          ' Equivalente al patrón Assembler, puede ser denominado de esta manera
+          class CreateEmployeeCommandFromResourceAssembler {
+            + CreateEmployeeCommand ToCommandFromResource(CreateEmployeeResource resource)
+          }
+          class CreatePositionCommandFromResourceAssembler {
+            + CreatePositionCommand ToCommandFromResource(CreatePositionResource resource)
+          }
+          class CreateProductCommandFromResourceAssembler {
+            + CreateProductCommand ToCommandFromResource(CreateProductResource resource)
+          }
+          class CreateVehicleCommandFromResourceAssembler {
+            + CreateVehicleCommand ToCommandFromResource(CreateVehicleResource resource)
+          }
+          class CreateWarehouseCommandFromResourceAssembler {
+            + CreateWarehouseCommand ToCommandFromResource(CreateWarehouseResource resource)
+          }
+          class EmployeeResourceFromEntityAssembler {
+            + EmployeeResource ToResourceFromEntity(Employee employee)
+          }
+          class PositionResourceFromEntityAssembler {
+            + PositionResource ToResourceFromEntity(Position position)
+          }
+          class ProductResourceFromEntityAssembler {
+            + ProductResource ToResourceFromEntity(Product product)
+            + IEnumerable<ProductResource> ToResourceFromEntities(IEnumerable<Product> products)
+          }
+          class UpdateEmployeeInfoCommandFromResourceAssembler {
+            + ChangeEmployeePositionCommand ToPositionCommand(long employeeId, UpdateEmployeeResource resource)
+            + UpdateEmployeeStatusCommand ToStatusCommand(long employeeId, string newStatus)
+          }
+          class UpdatePositionNameCommandFromResourceAssembler {
+            + UpdatePositionNameCommand ToCommandFromResource(long id, UpdatePositionResource resource)
+          }
+          class UpdateProductInfoCommandFromResourceAssembler {
+            + UpdateProductInfoCommand ToCommandFromResource(long productId, UpdateProductResource resource)
+          }
+          class UpdateVehicleInfoCommandFromResourceAssembler {
+            + UpdateVehicleInfoCommand ToCommandFromResource(long vehicleId, UpdateVehicleResource resource)
+          }
+          class UpdateWarehouseInfoCommandFromResourceAssembler {
+            + UpdateWarehouseInfoCommand ToCommandFromResource(long id, UpdateWarehouseResource resource)
+          }
+          class VehicleResourceFromEntityAssembler {
+            + VehicleResource ToResourceFromEntity(Vehicle vehicle)
+          }
+          class WarehouseResourceFromEntityAssembler {
+            + WarehouseResource ToResourceFromEntity(Warehouse warehouse)
+          }
+        }
+        package controllers {
+          ' Clases que exponen los endpoints REST del sistema, permitiendo la interacción con el cliente
+          class EmployeeController {
+            - IEmployeeCommandService _commandService
+            - IEmployeeQueryService _queryService
+            + EmployeeController(IEmployeeCommandService commandService, IEmployeeQueryService queryService)
+            + Task<ActionResult<IEnumerable<EmployeeResource>>> GetAll([FromQuery] int? pageSize, [FromQuery] int? pageNumber, [FromQuery] string? status, [FromQuery] string? position)
+            + Task<ActionResult<EmployeeResource>> GetById(long id)
+            + Task<ActionResult> Create([FromBody] CreateEmployeeResource resource)
+            + Task<ActionResult> UpdateInfo(long id, [FromBody] UpdateEmployeeResource resource)
+            + Task<ActionResult> Delete(long id)
+          }
+          class PositionController {
+            - IPositionCommandService _commandService
+            - IPositionQueryService _queryService
+            + PositionController(IPositionCommandService commandService, IPositionQueryService queryService)
+            + Task<ActionResult<IEnumerable<PositionResource>>> GetAll([FromQuery] int? pageSize, [FromQuery] int? pageNumber, [FromQuery] string? department, [FromQuery] bool? isActive)
+            + Task<ActionResult<PositionResource>> GetById(long id)
+            + Task<ActionResult> Create([FromBody] CreatePositionResource resource)
+            + Task<ActionResult> Update(long id, [FromBody] UpdatePositionResource resource)
+            + Task<ActionResult> Delete(long id)
+          }
+          class ProductController {
+            - IProductCommandService _productCommandService
+            - IProductQueryService _productQueryService
+            + ProductController(IProductCommandService productCommandService, IProductQueryService productQueryService)
+            + Task<ActionResult<IEnumerable<ProductResource>>> GetAll([FromQuery] int? pageSize, [FromQuery] int? pageNumber, [FromQuery] string? name, [FromQuery] string? category, [FromQuery] decimal? minPrice, [FromQuery] decimal? maxPrice)
+            + Task<ActionResult<ProductResource>> GetById(long id)
+            + Task<ActionResult<ProductResource>> Create([FromBody] CreateProductResource resource)
+            + Task<ActionResult<ProductResource>> Update(long id, [FromBody] UpdateProductResource resource)
+            + Task<ActionResult> Delete(long id)
+          }
+          class VehicleController {
+            - IVehicleCommandService _commandService
+            - IVehicleQueryService _queryService
+            + VehicleController(IVehicleCommandService commandService, IVehicleQueryService queryService)
+            + Task<ActionResult<IEnumerable<VehicleResource>>> GetAll([FromQuery] int? pageSize, [FromQuery] int? pageNumber, [FromQuery] string? status, [FromQuery] string? type, [FromQuery] string? licensePlate)
+            + Task<ActionResult<VehicleResource>> GetById(long id)
+            + Task<ActionResult> Create([FromBody] CreateVehicleResource resource)
+            + Task<ActionResult> Update(long id, [FromBody] UpdateVehicleResource resource)
+            + Task<ActionResult> Delete(long id)
+          }
+          class WarehouseController {
+            - IWarehouseCommandService _commandService
+            - IWarehouseQueryService _queryService
+            + WarehouseController(IWarehouseCommandService commandService, IWarehouseQueryService queryService)
+            + Task<ActionResult<IEnumerable<WarehouseResource>>> GetAll([FromQuery] int? pageSize, [FromQuery] int? pageNumber, [FromQuery] string? location, [FromQuery] string? type, [FromQuery] bool? isActive)
+            + Task<ActionResult<WarehouseResource>> GetById(long id)
+            + Task<ActionResult> Create([FromBody] CreateWarehouseResource resource)
+            + Task<ActionResult> Update(long id, [FromBody] UpdateWarehouseResource resource)
+            + Task<ActionResult> Delete(long id)
+          }
+        }
+      }
+    }
+  }
 }
 
 

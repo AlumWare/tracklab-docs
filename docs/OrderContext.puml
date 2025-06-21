@@ -1,9 +1,9 @@
 @startuml
 package tracklab-backend as tracklab_backend  {
     ' Bounded Context
-    package template {
+    package order {
         package domain {
-              package model {
+            package model {
                 package aggregates {
                   class Order <<AggregateRoot>> {
                       - Long OrderId
@@ -18,14 +18,51 @@ package tracklab-backend as tracklab_backend  {
                       + void UpdateStatus(OrderStatus status)
                   }
                 }
-                package Entities{
+                package commands {
+                    class AddOrderItemCommand {
+                        + long OrderId
+                        + long ProductId
+                        + int Quantity
+                        + decimal PriceAmount
+                        + string PriceCurrency
+                    }
+                    class CreateOrderCommand {
+                        + long CustomerId
+                        + long LogisticsId
+                        + string ShippingAddress
+                    }
+                    class DeleteOrderCommand {
+
+                    }
+                    class UpdateOrderStatusCommand {
+                        + long OrderId
+                        + OrderStatus NewStatus
+                    }
+                }
+                package entities{
                   class OrderItem {
                       - Long Id
-                      - ProductId ProductId  // Referencia al producto desde el ResourceContext
+                      - ProductId ProductId
                       - int Quantity
-                      - Price Price  // Precio al momento de la compra
+                      - Price Price
                       + OrderItem(Long productId, int quantity, Price price)
+                      + decimal GetTotalPrice()
                   }
+                }
+                package Queries {
+                    class GetAllOrdersQuery {
+                        + int? PageSize
+                        + int? PageNumber
+                        + OrderStatus? Status
+                        + long? CustomerId
+                        + Datetime? FromDate
+                        + DateTime? ToDate
+                        + GetAllOrdersQuery(int? pageSize, int? pageNumber, OrderStatus? status, long? customerId, DateTime? fromDate, DateTime? toDate)
+                    }
+                    class GetOrderByIdQuery {
+                        + long Id
+                        + GetOrderByIdQuery(long id)
+                    }
                 }
                 package valueobjects {
                     enum OrderStatus {
@@ -35,39 +72,131 @@ package tracklab-backend as tracklab_backend  {
                         Cancelled
                     }
                     class ProductId{
-
+                        + long Value
+                        + ProductId()
+                        + ProductId(long value)
+                        + string ToString()
+                        + operator long(ProductId productId)
+                        + operator ProductId(long value)
                     }
                 }
-              }
+            }
+            package repositories {
+                interface IOrderRepository {
+                    + Task<IEnumerable<OrderAggregate>> GetAllAsync(GetAllOrdersQuery query)
+                    + Task<OrderAggregate?> GetByIdAsync(GetOrderByIdQuery query)
+                }
+            }
+            package services {
+                interface IOrderCommandService {
+                    + Task<OrderAggregate> CreateAsync(CreateOrderCommand command)
+                    + Task<OrderAggregate> AddOrderItemAsync(AddOrderItemCommand command)
+                    + Task<OrderAggregate> UpdateStatusAsync(UpdateOrderStatusCommand command)
+                    + Task DeleteAsync(DeleteOrderCommand command)
+                }
+            }
         }
         package infrastructure {
             package persistence {
-                package jpa {
-                    ' Interfaces que implementan el patrón Repository para la persistencia de datos
+                package efc {
+                    package repositories {
+                        class OrderRepository {
+                            - ITenantContext _tenantContext
+                            + OrderRepository(AppDbContext context, ITenantContext tenantContext)
+                            - IQueryable<OrderAggregate> GetTenantFilteredQuery()
+                            + Task<IEnumerable<OrderAggregate>> GetAllAsync(GetAllOrdersQuery query)
+                            + Task<OrderAggregate?> GetByIdAsync(GetOrderByIdQuery query)
+                            + Task<OrderAggregate?> FindByIdAsync(long id)
+                        }
+                    }
                 }
             }
         }
         package application {
             package internal {
                 package commandservices {
-                    ' Clases que implementan las interfaces de servicios de comandos, ejecutando lógica de negocios relacionada con cambios de estado
+                    class OrderCommandService {
+                        - IOrderRepository _orderRepository
+                        + OrderCommandService(IOrderRepository orderRepository)
+                        + Task<OrderAggregate> CreateAsync(CreateOrderCommand command)
+                        + Task<OrderAggregate> AddOrderItemAsync(AddOrderItemCommand command)
+                        + Task<OrderAggregate> UpdateStatusAsync(UpdateOrderStatusCommand command)
+                        + Task DeleteAsync(DeleteOrderCommand command)
+                    }
                 }
                 package queryservices {
-                    ' Clases que implementan las interfaces de servicios de consultas, para la obtención de datos del sistema
+                    class OrderQueryService {
+                        - IOrderRepository _orderRepository
+                        + OrderQueryService(IOrderRepository orderRepository)
+                        + Task<IEnumerable<OrderAggregate>> Handle(GetAllOrdersQuery query)
+                        + Task<OrderAggregate?> Handle(GetOrderByIdQuery query)
+                    }
                 }
             }
         }
         package interfaces {
             package rest {
                 package resources {
-                    ' Clases de tipo record que funcionan como DTOs (Data Transfer Objects), siguiendo los principios REST (se tratan como recursos)
+                    class AddOrderItemResource {
+                        + long ProductId
+                        + int Quantity
+                        + decimal PriceAmount
+                        + string PriceCurrency
+                    }
+                    class CreateOrderResource {
+                        + long CustomerId
+                        + long LogisticsId
+                        + string ShippingAddress
+                    }
+                    class OrderResource {
+                        + long OrderId
+                        + long CustomerId
+                        + long LogisticsId
+                        + string ShippingAddress
+                        + DateTime OrderDate
+                        + string Status
+                        + decimal TotalPrice
+                        + IEnumerable<OrderItemResource> OrderItems
+                    }
+                    class OrderItemResource {
+                        + long Id
+                        + long ProductId
+                        + int Quantity
+                        + decimal PriceAmount
+                        + string PriceCurrency
+                    }
+                    class UpdateOrderStatusResource {
+                        string Status
+                    }
                 }
-                package transform {
-                    ' Clases con métodos estáticos para mapear entre recursos, comandos, consultas o entidades
-                    ' Equivalente al patrón Assembler, puede ser denominado de esta manera
+                package transformers {
+                    class AddOrderItemCommandFromResourceAssembler {
+                        + AddOrderItemCommand ToCommandFromResource(long orderId, AddOrderItemResource resource)
+                    }
+                    class CreateOrderCommandFromResourceAssembler {
+                        + CreateOrderCommand ToCommandFromResource(CreateOrderResource resource)
+                    }
+                    class OrderResourceFromEntityAssembler {
+                        + OrderResource ToResourceFromEntity(OrderAggregate order)
+                        + IEnumerable<OrderResource> ToResourceFromEntities(IEnumerable<OrderAggregate> orders)
+                        + OrderItemResource ToOrderItemResourceFromEntity(OrderItem orderItem)
+                    }
+                    class UpdateOrderStatusCommandFromResourceAssemble {
+                        + UpdateOrderStatusCommand ToCommandFromResource(long orderId, UpdateorderStatusResource resource)
+                    }
                 }
                 package controllers {
-                    ' Clases que exponen los endpoints REST del sistema, permitiendo la interacción con el cliente
+                    class OrderController {
+                        - IOrderCommandService _orderCommandService
+                        - IOrderQueryService _orderQueryService
+                        + OrderController(IOrderCommandService orderCommandService, IOrderQueryService orderQueryService)
+                        + Task<ActionResult<IEnumerable<OrderResource>>> GetAll()
+                        + Task<ActionResult<OrderResource>> GetById(long id)
+                        + Task<ActionResult<OrderResource>> Create([FromBody] CreateOrderResource resource)
+                        + Task<ActionResult<OrderResource>> AddOrderItem(long id, [FromBody] AddOrderItemResource resource)
+                        + Task<ActionResult<OrderResource>> UpdateStatus(long id, [FromBody] UpdateOrderStatusResource resource)
+                        + Task<ActionResult> Delete(long id)
+                    }
                 }
             }
         }

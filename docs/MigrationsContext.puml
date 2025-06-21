@@ -1,0 +1,19 @@
+@startuml
+package tracklab-backend as tracklab_backend {
+    package migrations {
+        namespace Alumware.Tracklab.API.Migrations {
+            class InitialMigration {
+                + void Up(MigrationBuilder migrationBuilder)
+                + void Down(MigrationBuilder migrationBuilder)
+            }
+            class AddTrackingContext {
+                + void Up(MigrationBuilder migrationBuilder)
+                + void Down(MigrationBuilder migrationBuilder)
+            }
+            class AppDbContextModelSnapshot {
+                + void BuildModel(ModelBuilder modelBuilder)
+            }
+        }
+    }
+}
+@enduml

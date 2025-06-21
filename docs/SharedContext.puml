@@ -1,91 +1,158 @@
-package domain {
-      package model {
-        package aggregates {
-          class Vehicle <<AggregateRoot>> {
-            - Long Id
-            - TenantId TenantId
-            - String LicensePlate
-            - BigDecimal LoadCapacity
-            - int PaxCapacity
-            - EVehicleStatus Status
-            - Coordinates Location
-            - List<Long> ImageAssetIds
-            + Vehicle(CreateVehicleCommand command)
-            + void UpdateStatus(EVehicleStatus newStatus)
-          }
-
-          class Employee <<AggregateRoot>> {
-            - Long Id
-            - TenantId TenantId
-            - Dni Dni
-            - Email Email
-            - String FirstName
-            - String LastName
-            - String PhoneNumber
-            - Position Position
-            - EEmployeeStatus Status
-            + Employee(CreateEmployeeCommand command)
-            + void ChangePosition(Position newPosition)
-            + void UpdateStatus(EEmployeeStatus newStatus)
-          }
-
-          class Warehouse <<AggregateRoot>> {
-            - Long Id
-            - TenantId TenantId
-            - EWarehouseType Type
-            - Coordinates Coordinates
-            - String Name
-            - StreetAddress Address
-            + Warehouse(CreateWarehouseCommand command)
-            + void UpdateInfo(String name, StreetAddress address, Coordinates coords)
-          }
-
-          class Position <<AggregateRoot>> {
-            - Long Id
-            - TenantId TenantId
-            - String Name
-            + Position(CreatePositionCommand command)
-            + void UpdateName(String newName)
-          }
+@startuml
+package tracklab-backend as tracklab_backend {
+  package shared {
+    package domain {
+      package repositories {
+        interface IBaseRepository<TEntity> {
+          + Task AddAsync(TEntity entity)
+          + Task<TEntity?> FindByIdAsync(long id)
+          + void Update(TEntity entity)
+          + void Remove(TEntity entity)
+          + Task<IEnumerable<TEntity>> ListAsync()
+          + Task<int> SaveChangeAsync()
         }
-
-        package valueobjects {
-          class Coordinates {
-            - double Latitude
-            - double Longitude
-          }
-
-          class Email {
-            - String Value
-          }
-
-          class StreetAddress {
-            - String Value
-          }
-
-          class Dni {
-            - String Value
-          }
+        interface IUnitOfWork {
+          + Task CompleteAsync()
         }
-
-        package enums {
-          enum EVehicleStatus {
-            Available
-            Occupied
-            Maintenance
-          }
-
-          enum EEmployeeStatus {
-            Available
-            OnVacation
-            Occupied
-          }
-
-          enum EWarehouseType {
-            Client
-            Provider
-            Logistics
+      }
+      package valueobjects {
+        class Email {
+          - Regex EmailRegex
+          + string Value
+          + Email()
+          + Email(string value)
+          + string ToString()
+          + operator string(Email email)
+          + operator Email(string email)
+        }
+        class PhoneNumber {
+          - Regex PhoneRegex
+          + string Value
+          + PhoneNumber()
+          + PhoneNumber(string value)
+          + string ToString()
+          + operator string(PhoneNumber phone)
+          + operator PhoneNumber(string phone)
+        }
+        class Price {
+          + decimal Amount
+          + string Currency
+          + Price()
+          + Price(decimal amount, string currency)
+          + string ToString()
+          + operator string(Price price)
+        }
+        class TenantId {
+          + long Value
+          + TenantId()
+          + TenantId(long value)
+          + string ToString()
+          + operator long(TenantId tenantId)
+          + operator TenantId(long value)
+        }
+      }
+    }
+    package infraestructure {
+      package documentation {
+        package openapi {
+          package configuration {
+            class SwaggerConfig {
+              + IServiceCollection AddSwaggerConfiguration(this IServiceCollection services)
+            }
+            class AuthorizeOperationFilter {
+              + void Apply(OpenApiOperation operation, OperationFilterContext context)
+            }
           }
         }
       }
+      package interfaces {
+        package asp {
+          package configuration {
+            package extensions {
+              class ModelStateExtensions {
+                + List<string> GetErrorMessages(this ModelStateDictionary dictionary)
+              }
+              class KebabCaseRouteNamingConvention {
+                - AttributeRouteModel? ReplaceControllerTemplate(SelectorModel string, string name)
+                + void Apply(ControllerModel controller)
+              }
+            }
+            class StringExtensions {
+              + string ToKebabCase(this string text)
+              - Regex KebabCaseRegex()
+            }
+          }
+        }
+      }
+      package multitenancy {
+        package extensions {
+          class TenantContextExtensions {
+            + IServiceCollection AddTenantContext(this IServiceCollection services)
+          }
+        }
+        interface ITenantContext {
+          + long? CurrentTenantId
+          + bool HasTenant
+          + void SetTenant(long tenantId)
+          + void ClearTenant()
+        }
+        class TenantContext {
+          - AsyncLocal<long?> _currentTenantId
+          + long? CurrentTenantId
+          + bool HasTenant
+          + void SetTenant(long tenantId)
+          + void ClearTenant()
+        }
+      }
+      package persistence {
+        package efc {
+          package configuration {
+            package extensions {
+              class ModelBuilderExtensions {
+                + void UseSnakeCaseNamingConvention(this ModelBuilder builder)
+              }
+              class StringExtensions {
+                + string ToSnakeCase(this string text)
+                + string ToPlural(this string text)
+              }
+            }
+            class AppDbContext {
+              + AppDbContext(DBContextOptions<AppDbContext> options)
+              + DbSet<Vehicle> Vehicles
+              + DbSet<Employee> Employees
+              + DbSet<Warehouse> Warehouses
+              + DbSet<Position> Positions
+              + DbSet<Product> Products
+              + DbSet<Order> Orders
+              + DbSet<OrderItem> OrderItems
+              + DbSet<User> Users
+              + DbSet<Tenant> Tenants
+              + DbSet<RouteAggregate> Routes
+              + DbSet<Container> Containers
+              + DbSet<TrackingEvent> TrackingEvents
+              + void OnConfiguring(DbContextOptionsBuilder builder)
+              + void OnModelCreating(ModelBuilder builder)
+            }
+          }
+          package repositories {
+            class BaseRepository<TEntity> {
+              - AppDbContext Context
+              - BaseRepository(AppDbContext context)
+              + Task AddAsync(TEntity entity)
+              + Task<TEntity?> FindByIdAsync(long id)
+              + void Update(TEntity entity)
+              + void Remove(TEntity entity)
+              + Task<IEnumerable<TEntity>> ListAsync()
+              + Task<int> SaveChangeAsync()
+            }
+            class UnitOfWork {
+              + Task CompleteAsync()
+            }
+          }
+        }
+      }
+    }
+  }
 }
+
+@enduml
